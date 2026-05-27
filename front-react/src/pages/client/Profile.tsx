@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { atualizarUsuario } from '../../services/api';
 
-const PerfilCliente = () => {
+const Profile = () => {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [formData, setFormData] = useState({
-    nome: 'João Silva',
-    email: 'joao.silva@email.com',
+    nome: usuario?.nome || 'João Silva',
+    email: usuario?.email || 'joao.silva@email.com',
     telefone: '(61) 99999-9999',
     cpf: '123.456.789-00',
     endereco: 'Rua das Flores, 123 - Asa Sul, Brasília/DF',
@@ -27,19 +30,6 @@ const PerfilCliente = () => {
   });
   const toastTimeout = useRef(null);
 
-  // Carregar dados salvos
-  useEffect(() => {
-    const savedProfile = localStorage.getItem('userProfile');
-    if (savedProfile) {
-      try {
-        const data = JSON.parse(savedProfile);
-        setFormData((prev) => ({ ...prev, ...data }));
-      } catch (e) {}
-    }
-    const savedAvatar = localStorage.getItem('userAvatar');
-    if (savedAvatar) setAvatar(savedAvatar);
-  }, []);
-
   const displayName = formData.nome.trim() || 'Usuário';
 
   const showToast = useCallback((message, isError = false) => {
@@ -55,40 +45,17 @@ const PerfilCliente = () => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const saveProfile = () => {
-    const profileToSave = { ...formData, lastUpdate: new Date().toISOString() };
-    localStorage.setItem('userProfile', JSON.stringify(profileToSave));
-    // Também salva nome e localização separadamente para fácil acesso no HomeCli
-    localStorage.setItem('clienteNome', formData.nome);
-    if (formData.cidade && formData.estado) {
-      localStorage.setItem(
-        'clienteLocalizacao',
-        `${formData.cidade} - ${formData.estado}`
-      );
+  const saveProfile = async () => {
+    try {
+      await atualizarUsuario(formData);
+      showToast('✅ Perfil atualizado com sucesso!');
+    } catch (error) {
+      console.error(error);
+      showToast('Erro ao atualizar perfil', true);
     }
-    showToast('✅ Perfil atualizado com sucesso!');
   };
 
   const cancelChanges = () => {
-    const saved = localStorage.getItem('userProfile');
-    if (saved) {
-      const data = JSON.parse(saved);
-      setFormData((prev) => ({ ...prev, ...data }));
-    } else {
-      setFormData({
-        nome: 'João Silva',
-        email: 'joao.silva@email.com',
-        telefone: '(61) 99999-9999',
-        cpf: '123.456.789-00',
-        endereco: 'Rua das Flores, 123 - Asa Sul, Brasília/DF',
-        cidade: 'Brasília',
-        estado: 'DF',
-        dataNascimento: '1990-05-15',
-        bio: 'Sou um cliente da Servijá que busca profissionais qualificados...',
-        notificacoes: 'sim',
-        idioma: 'pt',
-      });
-    }
     showToast('Alterações descartadas');
   };
 
@@ -109,8 +76,6 @@ const PerfilCliente = () => {
     reader.onload = (e) => {
       const imageData = e.target.result;
       setAvatar(imageData);
-
-      localStorage.setItem('userAvatar', imageData as string);
       showToast('✅ Foto de perfil atualizada!');
       closePhotoModal();
     };
@@ -133,7 +98,6 @@ const PerfilCliente = () => {
     };
   }, []);
 
-  // Estilos (mantidos iguais ao original, fornecido anteriormente)
   const styles = ` * {
   margin: 0;
   padding: 0;
@@ -149,7 +113,6 @@ body {
   width: 100%;
   min-height: 100vh;
 }
-/* HEADER */
 .user-header {
   background: linear-gradient(135deg, #f97316, #ea580c);
   color: #fff;
@@ -186,7 +149,6 @@ body {
   background: #fff;
   color: #f97316;
 }
-/* CARD */
 .profile-card {
   max-width: 950px;
   margin: 30px auto;
@@ -216,7 +178,6 @@ body {
 .edit-profile-link:hover {
   background: #ea580c;
 }
-/* AVATAR */
 .profile-avatar {
   width: 130px;
   height: 130px;
@@ -272,7 +233,6 @@ body {
   font-size: 14px;
   font-weight: 600;
 }
-/* FORM */
 .form-section {
   padding: 30px;
   border-top: 1px solid #f1f5f9;
@@ -321,7 +281,6 @@ textarea {
   font-size: 13px;
   color: #64748b;
 }
-/* ACTION BUTTONS */
 .action-buttons {
   display: flex;
   justify-content: flex-end;
@@ -352,7 +311,6 @@ textarea {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(249,115,22,0.25);
 }
-/* BOTTOM NAV */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -381,7 +339,6 @@ textarea {
 .nav-item.active, .nav-item:hover {
   color: #f97316;
 }
-/* FOOTER */
 .footer {
   background: #0f172a;
   color: #fff;
@@ -434,7 +391,6 @@ textarea {
   font-size: 13px;
   color: #94a3b8;
 }
-/* MODAL */
 .modal {
   position: fixed;
   inset: 0;
@@ -464,7 +420,6 @@ textarea {
   gap: 12px;
   margin-top: 20px;
 }
-/* TOAST */
 .success-toast {
   position: fixed;
   top: 20px;
@@ -496,7 +451,7 @@ textarea {
   .footer {
     padding-bottom: 120px;
   }
-} `; // (coloque aqui o CSS completo, igual ao que já estava)
+} `;
 
   return (
     <>
@@ -510,11 +465,14 @@ textarea {
           <div className="user-actions">
             <button
               className="icon-btn"
-              onClick={() => navigate('/propostas-cli')}
+              onClick={() => navigate('/client/proposals')}
             >
               <i className="fas fa-bell"></i>
             </button>
-            <button className="icon-btn" onClick={() => navigate('/home-cli')}>
+            <button
+              className="icon-btn"
+              onClick={() => navigate('/client/home')}
+            >
               <i className="fas fa-home"></i>
             </button>
             <button className="icon-btn" onClick={handleLogout}>
@@ -694,11 +652,8 @@ textarea {
           </div>
         </div>
 
-        <div className="footer">
-          {/* footer original - mantenha o mesmo conteúdo do arquivo original */}
-        </div>
+        <div className="footer"></div>
 
-        {/* Modal de foto */}
         <div
           className={`modal ${photoModalOpen ? 'active' : ''}`}
           onClick={closePhotoModal}
@@ -750,4 +705,4 @@ textarea {
   );
 };
 
-export default PerfilCliente;
+export default Profile;

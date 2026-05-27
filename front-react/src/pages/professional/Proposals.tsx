@@ -1,138 +1,84 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PropostaServico } from '../lib/types';
+import { listarMinhasPropostasProfissional } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
-type FiltroProposta = 'all' | 'aguardando' | 'aceita' | 'recusada';
+type FiltroProposta = 'all' | 'PENDENTE' | 'ACEITA' | 'RECUSADA';
 
-const TodasPropostasSev: React.FC = () => {
+interface PropostaApi {
+  id: number;
+  client_id: number;
+  titulo: string;
+  descricao: string;
+  valor: number;
+  prazo: string;
+  status: string;
+  created_at: string;
+  proposalProfessional: {
+    id: number;
+    proposal_id: number;
+    professional_id: number;
+    status: 'PENDENTE' | 'ACEITA' | 'RECUSADA';
+  };
+}
+
+const Proposals: React.FC = () => {
   const navigate = useNavigate();
-  const PROPOSTAS_KEY = 'minhasPropostas';
+  const { usuario, logout } = useAuth();
 
-  const [propostas, setPropostas] = useState<PropostaServico[]>([]);
+  const [propostas, setPropostas] = useState<PropostaApi[]>([]);
   const [currentFilter, setCurrentFilter] = useState<FiltroProposta>('all');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<'success' | 'error' | 'normal'>(
     'normal'
   );
+  const [loading, setLoading] = useState(true);
 
-  const showToast = (
-    msg: string,
-    _bgColor?: string,
-    isError: boolean = false
-  ) => {
-    setToastMessage(msg);
-    setToastType(isError ? 'error' : 'normal');
-    setTimeout(() => setToastMessage(null), 2800);
-  };
-
-  const showSuccessToast = (msg: string) => {
-    setToastMessage(msg);
-    setToastType('success');
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  const getPropostas = useCallback((): PropostaServico[] => {
-    const stored = localStorage.getItem(PROPOSTAS_KEY);
-    if (stored) {
-      try {
-        let propostas: PropostaServico[] = JSON.parse(stored);
-        // CORREÇÃO: usar getTime() para evitar erro TS2362/2363
-        propostas.sort(
-          (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
-        );
-        return propostas;
-      } catch (e) {
-        return [];
-      }
+  const loadPropostas = async () => {
+    try {
+      setLoading(true);
+      const dados = await listarMinhasPropostasProfissional();
+      setPropostas(dados);
+    } catch (error) {
+      console.error(error);
+      setToastMessage('Erro ao carregar propostas');
+      setToastType('error');
+    } finally {
+      setLoading(false);
     }
-    return [];
-  }, []);
-
-  const savePropostas = useCallback((propostasArray: PropostaServico[]) => {
-    localStorage.setItem(PROPOSTAS_KEY, JSON.stringify(propostasArray));
-  }, []);
-
-  const seedExamplePropostas = useCallback((): PropostaServico[] => {
-    const existing = getPropostas();
-    if (existing.length === 0) {
-      const examplePropostas: PropostaServico[] = [
-        {
-          id: Date.now() + 1,
-          servicoId: 'servico_exemplo_1',
-          cliente: 'Empresa Sabor & Vida',
-          servico: 'Instalação de quadro de luz',
-          mensagem:
-            'Olá! Sou eletricista especializado, posso realizar a instalação ainda hoje com garantia. Tenho 8 anos de experiência em quadros industriais. Orçamento detalhado.',
-          valor: 1200,
-          data: new Date(Date.now() - 86400000).toISOString(),
-          status: 'aguardando',
-          profissional: 'João Elétrica',
-        },
-        {
-          id: Date.now() + 2,
-          servicoId: 'servico_exemplo_2',
-          cliente: 'Mercado Bom Preço',
-          servico: 'Manutenção elétrica geral',
-          mensagem:
-            'Boa tarde! Posso fazer uma vistoria completa e substituir disjuntores com segurança. Valor justo e nota fiscal.',
-          valor: 1200,
-          data: new Date(Date.now() - 172800000).toISOString(),
-          status: 'aceita',
-          profissional: 'João Elétrica',
-        },
-        {
-          id: Date.now() + 3,
-          servicoId: 'servico_exemplo_3',
-          cliente: 'Padaria Pão Quente',
-          servico: 'Troca de chuveiro industrial',
-          mensagem:
-            'Disponibilidade imediata para troca do chuveiro. Preço especial para primeiro serviço.',
-          valor: 350,
-          data: new Date(Date.now() - 259200000).toISOString(),
-          status: 'recusada',
-          profissional: 'João Elétrica',
-        },
-      ];
-      savePropostas(examplePropostas);
-      return examplePropostas;
-    }
-    return existing;
-  }, [getPropostas, savePropostas]);
-
-  const loadPropostas = useCallback(() => {
-    const data = seedExamplePropostas();
-    setPropostas(data);
-  }, [seedExamplePropostas]);
+  };
 
   const filteredPropostas = propostas.filter((proposta) => {
     if (currentFilter === 'all') return true;
-    if (currentFilter === 'aguardando') {
-      return proposta.status === 'aguardando' || proposta.status === 'enviada';
-    }
-    return proposta.status === currentFilter;
+    return proposta.proposalProfessional.status === currentFilter;
   });
 
   const escapeHtml = (str: string): string => {
     if (!str) return '';
     return str.replace(/[&<>]/g, (m) => {
       if (m === '&') return '&amp;';
-      if (m === '<') return '&lt;';
-      if (m === '>') return '&gt;';
+      if (m === '<') return '<';
+      if (m === '>') return '>';
       return m;
     });
   };
 
   const renderPropostas = (): React.ReactNode => {
+    if (loading) {
+      return (
+        <div className="empty-state" id="emptyState">
+          <span>⏳</span>
+          <p style={{ marginTop: '12px' }}>Carregando propostas...</p>
+        </div>
+      );
+    }
+
     if (filteredPropostas.length === 0) {
       return (
         <div className="empty-state" id="emptyState">
           <span>📭</span>
           <p style={{ marginTop: '12px' }}>
-            Você ainda não enviou nenhuma proposta.
-          </p>
-          <p style={{ fontSize: '0.8rem' }}>
-            Vá até um serviço e clique em "Tenho interesse" para criar sua
-            primeira proposta.
+            Você ainda não tem nenhuma proposta.
           </p>
         </div>
       );
@@ -143,32 +89,22 @@ const TodasPropostasSev: React.FC = () => {
         {filteredPropostas.map((proposta) => {
           let statusClass = '';
           let statusText = '';
-          if (
-            proposta.status === 'aguardando' ||
-            proposta.status === 'enviada'
-          ) {
+          if (proposta.proposalProfessional.status === 'PENDENTE') {
             statusClass = 'status-aguardando';
             statusText = '⏳ Aguardando resposta';
-          } else if (proposta.status === 'aceita') {
+          } else if (proposta.proposalProfessional.status === 'ACEITA') {
             statusClass = 'status-aceita';
             statusText = '✅ Aceita';
-          } else if (proposta.status === 'recusada') {
+          } else if (proposta.proposalProfessional.status === 'RECUSADA') {
             statusClass = 'status-recusada';
             statusText = '❌ Recusada';
-          } else {
-            statusClass = 'status-aguardando';
-            statusText = '⏳ Pendente';
           }
 
-          let valorDisplay = proposta.valor || 'Não informado';
-          if (
-            proposta.valor !== undefined &&
-            !proposta.valor.toString().includes('R$')
-          ) {
-            valorDisplay = `R$ ${proposta.valor.toFixed(2)}`;
-          }
+          let valorDisplay = proposta.valor
+            ? `R$ ${proposta.valor.toFixed(2)}`
+            : 'Não informado';
 
-          const dataObj = new Date(proposta.data);
+          const dataObj = new Date(proposta.created_at);
           const dataFormatada =
             dataObj.toLocaleDateString('pt-BR') +
             ' às ' +
@@ -185,9 +121,9 @@ const TodasPropostasSev: React.FC = () => {
             >
               <div className="card-header">
                 <div className="client-info">
-                  <h3>{escapeHtml(proposta.cliente || 'Cliente')}</h3>
+                  <h3>{escapeHtml(proposta.titulo)}</h3>
                   <div className="service-tag">
-                    🔧 {escapeHtml(proposta.servico || 'Serviço genérico')}
+                    🔧 {escapeHtml(proposta.descricao || 'Descrição')}
                   </div>
                 </div>
                 <div className={`status-badge ${statusClass}`}>
@@ -196,12 +132,12 @@ const TodasPropostasSev: React.FC = () => {
               </div>
               <div className="proposal-details">
                 <div className="proposal-message">
-                  <strong>💬 Mensagem:</strong>
+                  <strong>💬 Descrição:</strong>
                   <br />
                   {escapeHtml(
-                    proposta.mensagem.length > 150
-                      ? proposta.mensagem.substring(0, 150) + '...'
-                      : proposta.mensagem
+                    proposta.descricao.length > 150
+                      ? proposta.descricao.substring(0, 150) + '...'
+                      : proposta.descricao
                   )}
                 </div>
                 <div
@@ -214,10 +150,7 @@ const TodasPropostasSev: React.FC = () => {
                     marginTop: '8px',
                   }}
                 >
-                  <span className="proposal-value">
-                    💰{' '}
-                    {escapeHtml(proposta.valor.toString() || 'Não informado')}
-                  </span>
+                  <span className="proposal-value">💰 {valorDisplay}</span>
                   <span
                     style={{
                       fontSize: '0.7rem',
@@ -231,11 +164,9 @@ const TodasPropostasSev: React.FC = () => {
                 </div>
               </div>
               <div className="proposal-date">
-                <span>
-                  📨 Enviada por: {escapeHtml(proposta.profissional || 'Você')}
-                </span>
+                <span>📨 Proposta ID: {proposta.id}</span>
                 <Link
-                  to={`/detalhe-servico/${proposta.servicoId}`}
+                  to={`/client/proposals/${proposta.id}`}
                   className="detail-link"
                 >
                   Ver detalhes →
@@ -248,12 +179,12 @@ const TodasPropostasSev: React.FC = () => {
     );
   };
 
-  const handleLogout = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleLogout = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     if (window.confirm('Deseja realmente sair da sua conta?')) {
-      localStorage.removeItem('homeUserName');
-      localStorage.removeItem('homeLocation');
-      showSuccessToast('🔐 Logout realizado com sucesso!');
+      await logout();
+      setToastMessage('🔐 Logout realizado com sucesso!');
+      setToastType('success');
       setTimeout(() => {
         navigate('/');
       }, 800);
@@ -263,39 +194,24 @@ const TodasPropostasSev: React.FC = () => {
   useEffect(() => {
     loadPropostas();
 
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === PROPOSTAS_KEY) {
-        loadPropostas();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-
-    const handleFocus = () => {
-      loadPropostas();
-    };
-    window.addEventListener('focus', handleFocus);
-
     const timer = setTimeout(() => {
-      const total = getPropostas().length;
+      const total = propostas.length;
       if (total > 0) {
-        showToast(
+        setToastMessage(
           `📬 Você tem ${total} proposta(s) no total. Use os filtros para organizar.`
         );
       } else {
-        showToast(
-          "Envie sua primeira proposta clicando em 'Tenho interesse' em algum serviço"
+        setToastMessage(
+          'Envie sua primeira proposta clicando em "Tenho interesse" em algum serviço'
         );
       }
     }, 400);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('focus', handleFocus);
       clearTimeout(timer);
     };
-  }, [loadPropostas, getPropostas]);
+  }, []);
 
-  // ========== ESTILOS (mantidos originais) ==========
   const styles = `
     * {
       margin: 0;
@@ -611,17 +527,21 @@ const TodasPropostasSev: React.FC = () => {
             <h1>📋 Propostas</h1>
             <div className="header-row">
               <div className="user-actions">
-                <Link to="/home-sev" className="icon-btn" title="Home">
+                <Link to="/professional/home" className="icon-btn" title="Home">
                   <i className="fas fa-home"></i>
                 </Link>
                 <Link
-                  to="/todas-propostas-sev"
+                  to="/professional/proposals"
                   className="icon-btn"
                   title="Todas as propostas"
                 >
                   <i className="fas fa-briefcase"></i>
                 </Link>
-                <Link to="/perfil-sev" className="icon-btn" title="Perfil">
+                <Link
+                  to="/professional/profile"
+                  className="icon-btn"
+                  title="Perfil"
+                >
                   <i className="fas fa-user"></i>
                 </Link>
                 <a
@@ -645,20 +565,20 @@ const TodasPropostasSev: React.FC = () => {
               📌 Todas
             </button>
             <button
-              className={`filter-btn ${currentFilter === 'aguardando' ? 'active' : ''}`}
-              onClick={() => setCurrentFilter('aguardando')}
+              className={`filter-btn ${currentFilter === 'PENDENTE' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('PENDENTE')}
             >
               ⏳ Aguardando resposta
             </button>
             <button
-              className={`filter-btn ${currentFilter === 'aceita' ? 'active' : ''}`}
-              onClick={() => setCurrentFilter('aceita')}
+              className={`filter-btn ${currentFilter === 'ACEITA' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('ACEITA')}
             >
               ✅ Aceitas
             </button>
             <button
-              className={`filter-btn ${currentFilter === 'recusada' ? 'active' : ''}`}
-              onClick={() => setCurrentFilter('recusada')}
+              className={`filter-btn ${currentFilter === 'RECUSADA' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('RECUSADA')}
             >
               ❌ Recusadas
             </button>
@@ -697,4 +617,4 @@ const TodasPropostasSev: React.FC = () => {
   );
 };
 
-export default TodasPropostasSev;
+export default Proposals;

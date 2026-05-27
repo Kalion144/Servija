@@ -1,3 +1,4 @@
+
 import type { Request, Response } from "express";
 import { db } from "../db/connection.js";
 import {
@@ -13,41 +14,18 @@ export class ProfessionalController {
     const { cidade, categoria } = req.query;
 
     try {
-      let query = db
+      const profissionais = await db
         .select({
           id: users.id,
           nome: users.nome,
           email: users.email,
           foto: users.foto,
           tipo: users.tipo,
-          profile: professionalProfiles,
         })
         .from(users)
-        .innerJoin(
-          professionalProfiles,
-          eq(professionalProfiles.user_id, users.id),
-        )
         .where(eq(users.tipo, "PROFISSIONAL"));
 
-      if (cidade) {
-        query = query.where(eq(professionalProfiles.cidade, String(cidade)));
-      }
-
-      if (categoria) {
-        query = query
-          .innerJoin(
-            professionalServices,
-            eq(
-              professionalServices.professional_profile_id,
-              professionalProfiles.id,
-            ),
-          )
-          .where(eq(professionalServices.categoria, String(categoria)));
-      }
-
-      const profissionais = await query;
-
-      res.json(profissionais);
+      res.json({ profissionais });
     } catch (error) {
       console.error(error);
       res.status(500).json({ erro: "Erro interno do servidor" });
@@ -121,7 +99,7 @@ export class ProfessionalController {
         .json({ erro: "Apenas profissionais podem criar perfil" });
     }
 
-    const { descricao, experiencia, cidade, valor_hora, telefone } = req.body;
+    const { profissao, bio, experiencia, habilidades, localizacao, descricao, cidade, valor_hora, telefone } = req.body;
 
     try {
       const existingProfile = await db
@@ -137,8 +115,12 @@ export class ProfessionalController {
         .insert(professionalProfiles)
         .values({
           user_id: user.userId,
-          descricao,
+          profissao,
+          bio,
           experiencia,
+          habilidades: habilidades ? JSON.stringify(habilidades) : null,
+          localizacao,
+          descricao,
           cidade,
           valor_hora,
           telefone,
@@ -150,8 +132,12 @@ export class ProfessionalController {
         perfil: {
           id: perfil.id,
           user_id: user.userId,
-          descricao,
+          profissao,
+          bio,
           experiencia,
+          habilidades,
+          localizacao,
+          descricao,
           cidade,
           valor_hora,
           telefone,
@@ -172,19 +158,51 @@ export class ProfessionalController {
         .json({ erro: "Apenas profissionais podem atualizar perfil" });
     }
 
-    const { descricao, experiencia, cidade, valor_hora, telefone } = req.body;
+    const { nome, profissao, bio, experiencia, habilidades, localizacao, descricao, cidade, valor_hora, telefone, fotoPerfil } = req.body;
 
     try {
-      await db
-        .update(professionalProfiles)
-        .set({
-          descricao,
+      if (nome || fotoPerfil !== undefined) {
+        const userUpdateData: any = {};
+        if (nome) userUpdateData.nome = nome;
+        if (fotoPerfil !== undefined) userUpdateData.foto = fotoPerfil;
+        await db.update(users).set(userUpdateData).where(eq(users.id, user.userId));
+      }
+
+      const existingProfile = await db
+        .select()
+        .from(professionalProfiles)
+        .where(eq(professionalProfiles.user_id, user.userId));
+
+      if (existingProfile.length === 0) {
+        await db.insert(professionalProfiles).values({
+          user_id: user.userId,
+          profissao,
+          bio,
           experiencia,
+          habilidades: habilidades ? JSON.stringify(habilidades) : null,
+          localizacao,
+          descricao,
           cidade,
           valor_hora,
           telefone,
-        })
-        .where(eq(professionalProfiles.user_id, user.userId));
+        });
+      } else {
+        const profileUpdateData: any = {};
+        if (profissao !== undefined) profileUpdateData.profissao = profissao;
+        if (bio !== undefined) profileUpdateData.bio = bio;
+        if (experiencia !== undefined) profileUpdateData.experiencia = experiencia;
+        if (habilidades !== undefined) profileUpdateData.habilidades = JSON.stringify(habilidades);
+        if (localizacao !== undefined) profileUpdateData.localizacao = localizacao;
+        if (descricao !== undefined) profileUpdateData.descricao = descricao;
+        if (cidade !== undefined) profileUpdateData.cidade = cidade;
+        if (valor_hora !== undefined) profileUpdateData.valor_hora = valor_hora;
+        if (telefone !== undefined) profileUpdateData.telefone = telefone;
+
+        await db
+          .update(professionalProfiles)
+          .set(profileUpdateData)
+          .where(eq(professionalProfiles.user_id, user.userId));
+      }
 
       res.json({ mensagem: "Perfil atualizado com sucesso" });
     } catch (error) {
@@ -279,3 +297,4 @@ export class ProfessionalController {
     }
   }
 }
+

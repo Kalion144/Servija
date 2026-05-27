@@ -1,15 +1,20 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes.js";
-import professionalRoutes from "./routes/professionalRoutes.js";
-import proposalRoutes from "./routes/proposalRoutes.js";
-import proposalProfessionalRoutes from "./routes/proposalProfessionalRoutes.js";
-import ratingRoutes from "./routes/ratingRoutes.js";
+import professionalRoutes from "./routes/professional/index.js";
+import clientRoutes from "./routes/client/index.js";
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "http://localhost:5174"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
+app.use(cookieParser());
 
 // Middleware de logging de requisições
 app.use((req, res, next) => {
@@ -30,9 +35,7 @@ app.use((req, res, next) => {
 
 app.use("/auth", authRoutes);
 app.use("/professionals", professionalRoutes);
-app.use("/proposals", proposalRoutes);
-app.use("/proposal-professionals", proposalProfessionalRoutes);
-app.use("/ratings", ratingRoutes);
+app.use("/client", clientRoutes);
 
 // Middleware de tratamento de erros
 app.use((err, req, res, next) => {

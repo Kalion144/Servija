@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cadastrarUser } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { Errors, Toast } from '../lib/types';
 
 export default function Cadastro() {
   const navigate = useNavigate();
-
+  const { cadastrar } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [toast, setToast] = useState<Toast>(null);
+
+  useEffect(() => {}, []);
 
   const validateName = () => {
     if (!fullName.trim()) return 'Nome completo é obrigatório.';
@@ -57,35 +59,23 @@ export default function Cadastro() {
 
     if (!nameErr && !emailErr && !passErr && !typeErr) {
       try {
-        const resposta = await cadastrarUser({
+        await cadastrar({
           nome: fullName,
           email,
           senha: password,
-          tipo: userType === 'Cliente' ? 'CLIENTE' : 'PROFISSIONAL',
+          tipo: userType === 'CLIENTE' ? 'CLIENTE' : 'PROFISSIONAL',
         });
 
-        console.log(resposta);
+        setToast({
+          msg: 'Cadastro realizado com sucesso!',
+          isError: false,
+        });
 
-        if (resposta.token) {
-          localStorage.setItem('token', resposta.token);
-          localStorage.setItem('usuario', JSON.stringify(resposta.usuario));
-
-          setToast({
-            msg: resposta.mensagem || 'Cadastro realizado com sucesso!',
-            isError: false,
-          });
-
-          setTimeout(() => {
-            navigate(
-              resposta.usuario.tipo === 'CLIENTE' ? '/home-cli' : '/home-sev'
-            );
-          }, 1500);
-        } else {
-          setToast({
-            msg: resposta.erro || 'Erro ao cadastrar',
-            isError: true,
-          });
-        }
+        setTimeout(() => {
+          navigate(
+            userType === 'CLIENTE' ? '/client/home' : '/professional/home'
+          );
+        }, 1500);
       } catch (error) {
         console.log(error);
 
@@ -97,7 +87,6 @@ export default function Cadastro() {
 
       setTimeout(() => setToast(null), 3000);
     } else {
-      //Replace with new Toast interface
       setToast({
         msg: 'Preencha todos os campos corretamente',
         isError: true,

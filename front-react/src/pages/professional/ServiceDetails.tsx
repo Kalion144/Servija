@@ -1,10 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
-const DetalhesServicoDinamico = () => {
+const ServiceDetails = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [servico, setServico] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -14,12 +17,6 @@ const DetalhesServicoDinamico = () => {
   useEffect(() => {
     if (location.state?.servico) {
       setServico(location.state.servico);
-    } else {
-      const stored = JSON.parse(
-        localStorage.getItem('servicos_publicados') || '[]'
-      );
-      const encontrado = stored.find((s) => s.id === id);
-      setServico(encontrado);
     }
   }, [id, location]);
 
@@ -39,7 +36,7 @@ const DetalhesServicoDinamico = () => {
       `Você manifestou interesse no serviço "${servico?.titulo}". O cliente será notificado.`
     );
   const handleProposal = () =>
-    navigate('/fazer-proposta', { state: { servico } });
+    navigate('/professional/send-proposal', { state: { servico } });
 
   if (!servico) return <div className="container">Carregando...</div>;
 
@@ -79,7 +76,7 @@ const DetalhesServicoDinamico = () => {
       <div className="container">
         <div className="top-bar">
           <div className="logo">Detalhe do Serviço</div>
-          <button className="back-home" onClick={() => navigate('/home-sev')}>
+          <button className="back-home" onClick={() => navigate('/professional/home')}>
             ← Voltar para Home
           </button>
         </div>
@@ -150,4 +147,5 @@ const DetalhesServicoDinamico = () => {
   );
 };
 
-export default DetalhesServicoDinamico;
+export default ServiceDetails;
+

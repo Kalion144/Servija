@@ -1,11 +1,13 @@
+import { Router } from "express";
+import { AuthController } from "../controllers/authController.js";
+import { authenticateToken } from "../middleware/authMiddleware.js";
 
-import { Router } from 'express'
-import { AuthController } from '../controllers/authController.js'
+const router = Router();
 
-const router = Router()
+router.post("/register", AuthController.register);
+router.post("/login", AuthController.login);
+router.get("/me", authenticateToken, AuthController.me);
+router.put("/update", authenticateToken, AuthController.updateUser);
+router.post("/logout", authenticateToken, AuthController.logout);
 
-router.post('/register', AuthController.register)
-router.post('/login', AuthController.login)
-
-export default router
-
+export default router;

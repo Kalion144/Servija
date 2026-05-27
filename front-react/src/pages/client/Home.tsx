@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { listarProfissionais } from '../../services/api';
 
-const HomeCli = () => {
+const Home = () => {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [prestadores, setPrestadores] = useState([]);
-  const [clienteNome, setClienteNome] = useState('Cliente');
-  const [clienteLocal, setClienteLocal] = useState('Brasília - DF');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [toast, setToast] = useState({
@@ -24,18 +25,23 @@ const HomeCli = () => {
   };
 
   useEffect(() => {
-    const storedPrestadores = JSON.parse(
-      localStorage.getItem('prestadores_cadastrados') || '[]'
-    );
-    setPrestadores(storedPrestadores);
-    const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    if (userProfile.nome) setClienteNome(userProfile.nome);
-    if (userProfile.cidade && userProfile.estado)
-      setClienteLocal(`${userProfile.cidade} - ${userProfile.estado}`);
-    else if (userProfile.endereco)
-      setClienteLocal(userProfile.endereco.split(',')[0]);
-    else if (userProfile.localizacao) setClienteLocal(userProfile.localizacao);
+    const carregarDados = async () => {
+      try {
+        const dados = await listarProfissionais();
+        if (dados.profissionais) {
+          setPrestadores(dados.profissionais);
+        } else if (Array.isArray(dados)) {
+          setPrestadores(dados);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    carregarDados();
   }, []);
+
+  const clienteNome = usuario?.nome || 'Cliente';
+  const clienteLocal = 'Brasília - DF';
 
   const openModal = (id) => {
     const prof = prestadores.find((p) => p.id === id);
@@ -130,35 +136,35 @@ const HomeCli = () => {
           <div className="user-actions">
             <button
               className="icon-btn"
-              onClick={() => navigate('/propostas-cli')}
+              onClick={() => navigate('/client/proposals')}
               title="Notificações"
             >
               <i className="fas fa-bell"></i>
             </button>
             <button
               className="icon-btn"
-              onClick={() => navigate('/publicar-servico')}
+              onClick={() => navigate('/client/post-service')}
               title="Publicar Serviço"
             >
               <i className="fas fa-plus-circle"></i>
             </button>
             <button
               className="icon-btn"
-              onClick={() => navigate('/servicos-cli')}
+              onClick={() => navigate('/client/services')}
               title="Serviços Recebidos"
             >
               <i className="fas fa-briefcase"></i>
             </button>
             <button
               className="icon-btn"
-              onClick={() => navigate('/perfil-cli')}
+              onClick={() => navigate('/client/profile')}
               title="Perfil"
             >
               <i className="fas fa-user"></i>
             </button>
             <button
               className="icon-btn"
-              onClick={() => navigate('/home-cli')}
+              onClick={() => navigate('/client/home')}
               title="Home"
             >
               <i className="fas fa-home"></i>
@@ -373,4 +379,4 @@ const HomeCli = () => {
   );
 };
 
-export default HomeCli;
+export default Home;

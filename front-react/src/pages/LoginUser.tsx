@@ -1,35 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import { ToastState } from '../lib/types';
 
 export default function LoginUser() {
   const navigate = useNavigate();
+  const { login, usuario } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('cliente');
-  const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<ToastState | null>(null);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('savedEmail');
-    if (saved) {
-      setEmail(saved);
-      setRemember(true);
-    }
-  }, []);
-
   const validate = () => {
-    let newErrors = {};
-    if (!email.trim())
-      (newErrors as Record<string, string>).email = 'E-mail obrigatório';
+    let newErrors: Record<string, string> = {};
+    if (!email.trim()) newErrors.email = 'E-mail obrigatório';
     else if (!/^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(email))
-      (newErrors as Record<string, string>).email = 'E-mail inválido';
-    if (!password)
-      (newErrors as Record<string, string>).password = 'Senha obrigatória';
-    else if (password.length < 6)
-      (newErrors as Record<string, string>).password = 'Mínimo 6 caracteres';
+      newErrors.email = 'E-mail inválido';
+    if (!password) newErrors.password = 'Senha obrigatória';
+    else if (password.length < 6) newErrors.password = 'Mínimo 6 caracteres';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -38,38 +26,20 @@ export default function LoginUser() {
     if (!validate()) return;
 
     try {
-      const resposta = await loginUser({
-        email,
-        senha: password,
+      const usuarioLogado = await login(email, password);
+
+      setToast({
+        message: 'Login realizado com sucesso',
+        isError: false,
       });
 
-      console.log(resposta);
-
-      if (resposta.token) {
-        localStorage.setItem('token', resposta.token);
-        localStorage.setItem('usuario', JSON.stringify(resposta.usuario));
-        if (remember) {
-          localStorage.setItem('savedEmail', email);
-        } else {
-          localStorage.removeItem('savedEmail');
+      setTimeout(() => {
+        if (usuarioLogado?.tipo === 'CLIENTE') {
+          navigate('/client/home');
+        } else if (usuarioLogado?.tipo === 'PROFISSIONAL') {
+          navigate('/professional/home');
         }
-
-        setToast({
-          message: resposta.mensagem,
-          isError: false,
-        });
-
-        setTimeout(() => {
-          navigate(
-            resposta.usuario.tipo === 'CLIENTE' ? '/home-cli' : '/home-sev'
-          );
-        }, 1500);
-      } else {
-        setToast({
-          message: resposta.erro || 'Login inválido',
-          isError: true,
-        });
-      }
+      }, 1000);
     } catch (error) {
       console.log(error);
 
@@ -114,43 +84,7 @@ export default function LoginUser() {
         {errors.password && (
           <div className="error-message">{errors.password}</div>
         )}
-        <div className="user-type-selection">
-          <label
-            className={`user-type-card ${userType === 'cliente' ? 'active' : ''}`}
-          >
-            <input
-              type="radio"
-              name="userType"
-              value="cliente"
-              checked={userType === 'cliente'}
-              onChange={() => setUserType('cliente')}
-            />
-            <i className="fas fa-user"></i>
-            <span>Cliente</span>
-          </label>
-          <label
-            className={`user-type-card ${userType === 'prestador' ? 'active' : ''}`}
-          >
-            <input
-              type="radio"
-              name="userType"
-              value="prestador"
-              checked={userType === 'prestador'}
-              onChange={() => setUserType('prestador')}
-            />
-            <i className="fas fa-tools"></i>
-            <span>Prestador de Serviços</span>
-          </label>
-        </div>
         <div className="login-options">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-            />
-            <span>Lembrar de mim</span>
-          </label>
           <a
             href="#"
             className="forgot-link"

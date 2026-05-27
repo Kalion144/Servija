@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'seu-segredo-jwt'
+const JWT_SECRET = process.env.JWT_SECRET
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -43,12 +43,11 @@ export class AuthController {
       const token = jwt.sign(
         { userId: newUser.id, userType: tipo },
         JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: '3h' }
       )
 
       const response = {
         mensagem: 'Usuário cadastrado com sucesso',
-        token,
         usuario: {
           id: newUser.id,
           nome,
@@ -59,6 +58,12 @@ export class AuthController {
       }
 
       console.log('✅ Resposta de registro:', JSON.stringify(response, null, 2))
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 3 * 60 * 60 * 1000,
+      })
       res.status(201).json(response)
     } catch (error) {
       console.error('❌ Erro no registro:', error)
@@ -93,7 +98,7 @@ export class AuthController {
       const token = jwt.sign(
         { userId: user.id, userType: user.tipo },
         JWT_SECRET,
-        { expiresIn: '24h' }
+        { expiresIn: '3h' }
       )
 
       const [profile] =
@@ -106,7 +111,6 @@ export class AuthController {
 
       const response = {
         mensagem: 'Login realizado com sucesso',
-        token,
         usuario: {
           id: user.id,
           nome: user.nome,
@@ -118,11 +122,99 @@ export class AuthController {
       }
 
       console.log('✅ Resposta de login:', JSON.stringify(response, null, 2))
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 3 * 60 * 60 * 1000,
+      })
       res.json(response)
     } catch (error) {
       console.error('❌ Erro no login:', error)
       res.status(500).json({ erro: 'Erro interno do servidor' })
     }
+  }
+
+  static async me(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId
+
+      if (!userId) {
+        return res.status(401).json({ erro: 'Usuário não autenticado' })
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.id, userId))
+
+      if (!user) {
+        return res.status(404).json({ erro: 'Usuário não encontrado' })
+      }
+
+      const [profile] =
+        user.tipo === 'PROFISSIONAL'
+          ? await db
+              .select()
+              .from(professionalProfiles)
+              .where(eq(professionalProfiles.user_id, user.id))
+          : [null]
+
+      res.json({
+        usuario: {
+          id: user.id,
+          nome: user.nome,
+          email: user.email,
+          tipo: user.tipo,
+          foto: user.foto,
+          perfilProfissional: profile,
+        },
+      })
+    } catch (error) {
+      console.error('❌ Erro ao obter dados do usuário:', error)
+      res.status(500).json({ erro: 'Erro interno do servidor' })
+    }
+  }
+
+  static async updateUser(req: Request, res: Response) {
+    const userId = req.user?.userId
+    const { nome, email, foto, telefone, cpf, endereco, cidade, estado, dataNascimento, bio } = req.body
+
+    try {
+      if (!userId) {
+        return res.status(401).json({ erro: 'Usuário não autenticado' })
+      }
+
+      const updateData: any = {}
+      if (nome) updateData.nome = nome
+      if (email) updateData.email = email
+      if (foto !== undefined) updateData.foto = foto
+      if (telefone) updateData.telefone = telefone
+      if (cpf) updateData.cpf = cpf
+      if (endereco) updateData.endereco = endereco
+      if (cidade) updateData.cidade = cidade
+      if (estado) updateData.estado = estado
+      if (dataNascimento) updateData.dataNascimento = dataNascimento
+      if (bio) updateData.bio = bio
+
+      await db.update(users).set(updateData).where(eq(users.id, userId))
+
+      const [updatedUser] = await db.select().from(users).where(eq(users.id, userId))
+
+      res.json({
+        mensagem: 'Usuário atualizado com sucesso',
+        usuario: updatedUser
+      })
+    } catch (error) {
+      console.error('❌ Erro ao atualizar usuário:', error)
+      res.status(500).json({ erro: 'Erro interno do servidor' })
+    }
+  }
+
+  static async logout(req: Request, res: Response) {
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    })
+    res.json({ mensagem: 'Logout realizado com sucesso' })
   }
 }
 

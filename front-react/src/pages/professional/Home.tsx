@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { listarMinhasPropostas } from '../../services/api';
 
-const HomeSev = () => {
+const Home = () => {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [servicosDisponiveis, setServicosDisponiveis] = useState([]);
-  const [userName, setUserName] = useState('João Silva');
-  const [location, setLocation] = useState('Brasília - DF');
   const [toastMessage, setToastMessage] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimeoutRef = useRef(null);
@@ -18,21 +19,26 @@ const HomeSev = () => {
   };
 
   useEffect(() => {
-    const stored = JSON.parse(
-      localStorage.getItem('servicos_publicados') || '[]'
-    );
-    setServicosDisponiveis(stored.filter((s) => s.status === 'aberto'));
-
-    const savedProfile = localStorage.getItem('prestadorPerfil');
-    if (savedProfile) {
-      const profile = JSON.parse(savedProfile);
-      if (profile.nome) setUserName(profile.nome);
-      if (profile.localizacao) setLocation(profile.localizacao);
-    }
+    const carregarDados = async () => {
+      try {
+        const dados = await listarMinhasPropostas();
+        if (dados.propostas) {
+          setServicosDisponiveis(dados.propostas);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    carregarDados();
   }, []);
 
+  const userName = usuario?.nome || 'João Silva';
+  const location = 'Brasília - DF';
+
   const handleCardClick = (servico) => {
-    navigate(`/detalhe-servico/${servico.id}`, { state: { servico } });
+    navigate(`/professional/service-details/${servico.id}`, {
+      state: { servico },
+    });
   };
   const handleEditLocation = () => {
     const newLocation = prompt('Digite sua cidade e UF:', location);
@@ -87,16 +93,22 @@ const HomeSev = () => {
           </div>
         </div>
         <div className="user-actions">
-          <button className="icon-btn" onClick={() => navigate('/home-sev')}>
+          <button
+            className="icon-btn"
+            onClick={() => navigate('/professional/home')}
+          >
             <i className="fas fa-home"></i>
           </button>
           <button
             className="icon-btn"
-            onClick={() => navigate('/todas-propostas-sev')}
+            onClick={() => navigate('/professional/proposals')}
           >
             <i className="fas fa-briefcase"></i>
           </button>
-          <button className="icon-btn" onClick={() => navigate('/perfil-sev')}>
+          <button
+            className="icon-btn"
+            onClick={() => navigate('/professional/profile')}
+          >
             <i className="fas fa-user"></i>
           </button>
           <button className="icon-btn" onClick={handleLogout}>
@@ -159,4 +171,4 @@ const HomeSev = () => {
   );
 };
 
-export default HomeSev;
+export default Home;

@@ -8,6 +8,15 @@ export const users = sqliteTable("users", {
   senha_hash: text("senha_hash").notNull(),
   tipo: text("tipo").notNull().$type<"CLIENTE" | "PROFISSIONAL">(),
   foto: text("foto"),
+  telefone: text("telefone"),
+  cpf: text("cpf"),
+  endereco: text("endereco"),
+  cidade: text("cidade"),
+  estado: text("estado"),
+  dataNascimento: text("dataNascimento"),
+  bio: text("bio"),
+  notificacoes: text("notificacoes"),
+  idioma: text("idioma"),
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -18,9 +27,13 @@ export const professionalProfiles = sqliteTable("professional_profiles", {
   user_id: int("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  profissao: text("profissao"),
+  bio: text("bio"),
+  experiencia: text("experiencia"),
+  habilidades: text("habilidades"),
+  localizacao: text("localizacao"),
   descricao: text("descricao"),
-  experiencia: int("experiencia"),
-  cidade: text("cidade").notNull(),
+  cidade: text("cidade"),
   valor_hora: real("valor_hora"),
   media_estrelas: real("media_estrelas").default(0),
   total_avaliacoes: int("total_avaliacoes").default(0),
@@ -34,6 +47,10 @@ export const professionalServices = sqliteTable("professional_services", {
     .references(() => professionalProfiles.id, { onDelete: "cascade" }),
   categoria: text("categoria").notNull(),
   subcategoria: text("subcategoria"),
+  urgente: int("urgente").default(0),
+  contato: text("contato"),
+  localizacao: text("localizacao"),
+  fotos: text("fotos"), // array de URLs em JSON
 });
 
 export const proposals = sqliteTable("proposals", {

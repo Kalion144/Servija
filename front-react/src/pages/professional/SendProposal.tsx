@@ -1,9 +1,13 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { criarProposta } from '../../services/api';
 
-export default function EnviarPropostaSev() {
+export default function SendProposal() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { usuario } = useAuth();
   const { servico } = location.state || {};
   const [mensagem, setMensagem] = useState('');
   const [valor, setValor] = useState(servico?.preco || '');
@@ -11,10 +15,10 @@ export default function EnviarPropostaSev() {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    if (!servico) navigate('/home-sev.html');
+    if (!servico) navigate('/professional/home');
   }, [servico, navigate]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!mensagem.trim()) {
       setToast({
@@ -23,37 +27,22 @@ export default function EnviarPropostaSev() {
       });
       return;
     }
-    const prestadorNome = localStorage.getItem('prestadorPerfil')
-      ? JSON.parse(localStorage.getItem('prestadorPerfil')).nome
-      : 'Profissional';
-    const novaProposta = {
-      id: Date.now(),
-      servicoId: servico.id,
-      clienteId: servico.clienteId,
-      clienteNome: servico.clienteNome || 'Cliente',
-      servicoTitulo: servico.titulo,
-      mensagem,
-      valor: valor
-        ? `${valor}${negociavel ? ' (negociável)' : ''}`
-        : negociavel
-          ? 'Negociável'
-          : 'Não informado',
-      data: new Date().toISOString(),
-      status: 'aguardando',
-      profissional: prestadorNome,
-    };
-    const propostasPrestador = JSON.parse(
-      localStorage.getItem('minhasPropostas') || '[]'
-    );
-    propostasPrestador.unshift(novaProposta);
-    localStorage.setItem('minhasPropostas', JSON.stringify(propostasPrestador));
-    const propostasCliente = JSON.parse(
-      localStorage.getItem('propostas_cliente') || '[]'
-    );
-    propostasCliente.unshift(novaProposta);
-    localStorage.setItem('propostas_cliente', JSON.stringify(propostasCliente));
-    setToast({ message: 'Proposta enviada com sucesso!', isError: false });
-    setTimeout(() => navigate('/todasPropostas-sev.html'), 1500);
+    try {
+      await criarProposta({
+        servicoId: servico.id,
+        mensagem,
+        valor,
+        negociavel,
+      });
+      setToast({ message: 'Proposta enviada com sucesso!', isError: false });
+      setTimeout(() => navigate('/professional/proposals'), 1500);
+    } catch (error) {
+      console.error(error);
+      setToast({
+        message: 'Erro ao enviar proposta',
+        isError: true,
+      });
+    }
   };
 
   const styles = `
@@ -85,19 +74,19 @@ export default function EnviarPropostaSev() {
           <div className="user-actions">
             <button
               className="icon-btn"
-              onClick={() => navigate('/home-sev.html')}
+              onClick={() => navigate('/professional/home')}
             >
               <i className="fas fa-home"></i>
             </button>
             <button
               className="icon-btn"
-              onClick={() => navigate('/todasPropostas-sev.html')}
+              onClick={() => navigate('/professional/proposals')}
             >
               <i className="fas fa-briefcase"></i>
             </button>
             <button
               className="icon-btn"
-              onClick={() => navigate('/Perfil-Sev.html')}
+              onClick={() => navigate('/professional/profile')}
             >
               <i className="fas fa-user"></i>
             </button>
@@ -164,3 +153,4 @@ export default function EnviarPropostaSev() {
     </>
   );
 }
+

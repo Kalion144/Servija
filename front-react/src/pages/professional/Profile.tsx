@@ -1,10 +1,14 @@
+
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { atualizarPerfil } from '../../services/api';
 
 const DEFAULT_AVATAR_SVG =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238aa0bc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
-const PerfilPrestador = () => {
-  const [nome, setNome] = useState('');
+const Profile = () => {
+  const { usuario } = useAuth();
+  const [nome, setNome] = useState(usuario?.nome || '');
   const [profissao, setProfissao] = useState('Eletricista');
   const [bio, setBio] = useState('');
   const [experiencia, setExperiencia] = useState('');
@@ -109,71 +113,33 @@ const PerfilPrestador = () => {
     return true;
   };
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     if (!validateForm()) return;
-    const profileData = {
-      nome: nome.trim(),
-      profissao: profissao.trim(),
-      bio: bio.trim(),
-      experiencia: experiencia.trim(),
-      habilidades: [...skillsArray],
-      fotoPerfil: photoBase64 || null,
-      savedAt: new Date().toISOString(),
-      localizacao: localStorage.getItem('homeLocation') || 'Brasília - DF',
-      avaliacao: '4.8',
-    };
-    localStorage.setItem('prestadorPerfil', JSON.stringify(profileData));
-    // Atualizar lista global para aparecer no HomeCli
-    const prestadores = JSON.parse(
-      localStorage.getItem('prestadores_cadastrados') || '[]'
-    );
-    const existingIndex = prestadores.findIndex(
-      (p) => p.nome === profileData.nome
-    );
-    const prestadorCompleto = {
-      ...profileData,
-      id: existingIndex !== -1 ? prestadores[existingIndex].id : Date.now(),
-    };
-    if (existingIndex !== -1) prestadores[existingIndex] = prestadorCompleto;
-    else prestadores.push(prestadorCompleto);
-    localStorage.setItem(
-      'prestadores_cadastrados',
-      JSON.stringify(prestadores)
-    );
-    showToast(
-      `✅ Perfil salvo! ${profileData.nome} - ${profileData.profissao} | ${skillsArray.length} habilidades.`,
-      '#1f6e5c'
-    );
+    try {
+      await atualizarPerfil({
+        nome: nome.trim(),
+        profissao: profissao.trim(),
+        bio: bio.trim(),
+        experiencia: experiencia.trim(),
+        habilidades: [...skillsArray],
+        fotoPerfil: photoBase64 || null,
+        localizacao: 'Brasília - DF',
+      });
+      showToast(
+        `✅ Perfil salvo! ${nome.trim()} - ${profissao.trim()} | ${skillsArray.length} habilidades.`,
+        '#1f6e5c'
+      );
+    } catch (error) {
+      console.error(error);
+      showToast('Erro ao salvar perfil', '#b91c1c');
+    }
     setIsSavePressed(true);
     setTimeout(() => setIsSavePressed(false), 200);
   };
 
-  const loadSavedData = () => {
-    const savedProfile = localStorage.getItem('prestadorPerfil');
-    if (savedProfile) {
-      try {
-        const data = JSON.parse(savedProfile);
-        if (data.nome) setNome(data.nome);
-        if (data.profissao) setProfissao(data.profissao);
-        if (data.bio) setBio(data.bio);
-        if (data.experiencia) setExperiencia(data.experiencia);
-        if (
-          data.habilidades &&
-          Array.isArray(data.habilidades) &&
-          data.habilidades.length > 0
-        )
-          setSkillsArray(data.habilidades);
-        if (data.fotoPerfil && data.fotoPerfil.startsWith('data:image'))
-          setPhotoBase64(data.fotoPerfil);
-        showToast('Dados carregados do rascunho', '#2c7a6e');
-      } catch (e) {
-        console.warn(e);
-      }
-    }
-  };
   const cancelForm = () => {
     if (window.confirm('Tem certeza que deseja cancelar?')) {
-      setNome('');
+      setNome(usuario?.nome || '');
       setProfissao('Eletricista');
       setBio('');
       setExperiencia('');
@@ -188,7 +154,6 @@ const PerfilPrestador = () => {
     }
   };
   useEffect(() => {
-    loadSavedData();
     return () => {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     };
@@ -210,7 +175,6 @@ body {
   align-items: center;
 }
 
-/* Container principal estilizado como card */
 .profile-card {
   max-width: 820px;
   width: 100%;
@@ -225,7 +189,6 @@ body {
   transform: scale(1.01);
 }
 
-/* cabeçalho */
 .form-header {
   background: #ffffff;
   padding: 32px 36px 8px 36px;
@@ -235,7 +198,7 @@ body {
 .form-header h1 {
   font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(125deg, #1F3B4C, #2C5A6E);
+  background: linear-gradient(125deg, #1F3B4C, #2C7A6E);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -249,12 +212,10 @@ body {
   font-size: 0.95rem;
 }
 
-/* conteúdo principal */
 .form-body {
   padding: 24px 36px 32px 36px;
 }
 
-/* seção de foto de perfil (destaque) */
 .profile-photo-section {
   display: flex;
   align-items: center;
@@ -336,7 +297,6 @@ body {
   max-width: 220px;
 }
 
-/* seções comuns */
 .form-section {
   margin-bottom: 32px;
   border-radius: 24px;
@@ -403,7 +363,6 @@ textarea {
   min-height: 90px;
 }
 
-/* habilidades */
 .skills-area {
   background: #fafcff;
   border-radius: 28px;
@@ -484,7 +443,6 @@ textarea {
   transform: scale(0.97);
 }
 
-/* botões de ação */
 .action-buttons {
   display: flex;
   justify-content: flex-end;
@@ -578,7 +536,7 @@ textarea {
 
 .file-input-hidden {
   display: none;
-}`; // (mantenha os estilos como estavam)
+}`;
 
   return (
     <>
@@ -748,4 +706,4 @@ textarea {
   );
 };
 
-export default PerfilPrestador;
+export default Profile;

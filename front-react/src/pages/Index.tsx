@@ -1,13 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { Toast } from '../components/Toast';
 import { ToastState } from '../lib/types';
 
 export default function Index() {
   const navigate = useNavigate();
+  const { usuario, loading } = useAuth();
   const [toast, setToast] = useState<ToastState | null>(null);
   const showToast = (msg: string, err = false) =>
     setToast({ message: msg, isError: err });
+
+  useEffect(() => {
+    if (!loading && usuario) {
+      navigate(
+        usuario.tipo === 'CLIENTE' ? '/client/home' : '/professional/home'
+      );
+    }
+  }, [usuario, loading, navigate]);
+
+  if (loading) {
+    return <div>Carregando...</div>;
+  }
+
   return (
     <div className="container">
       <div className="welcome-card">

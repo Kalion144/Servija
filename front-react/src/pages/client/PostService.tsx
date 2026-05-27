@@ -1,9 +1,10 @@
 import React, { useState, useRef, ChangeEvent, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Toast } from '../components/Toast';
-import { UploadedFile, ToastState, ServicoPublicado } from '../lib/types';
+import { useAuth } from '../../contexts/AuthContext';
+import { Toast } from '../../components/Toast';
+import { UploadedFile, ToastState } from '../../lib/types';
+import { criarProposta } from '../../services/api';
 
-// Tipos locais (usados apenas neste componente)
 interface FormData {
   titulo: string;
   descricao: string;
@@ -14,8 +15,9 @@ interface FormData {
   localizacao: string;
 }
 
-const PublicarServico: React.FC = () => {
+const PostService: React.FC = () => {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
 
   const [formData, setFormData] = useState<FormData>({
     titulo: '',
@@ -109,31 +111,27 @@ const PublicarServico: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (validarFormulario()) {
-      const novoServico: ServicoPublicado = {
-        id: Date.now().toString(),
-        titulo: formData.titulo,
-        descricao: formData.descricao,
-        categoria: formData.categoria,
-        preco: formData.preco,
-        urgente: formData.urgente,
-        contato: formData.contato,
-        localizacao: formData.localizacao,
-        fotos: fotos.map((f) => f.base64),
-        dataPublicacao: new Date().toISOString(),
-        clienteId: localStorage.getItem('clienteId') || 'cliente@email.com',
-        clienteNome: localStorage.getItem('clienteNome') || 'João Silva',
-        status: 'aberto',
-      };
-      const servicos: ServicoPublicado[] = JSON.parse(
-        localStorage.getItem('servicos_publicados') || '[]'
-      );
-      servicos.push(novoServico);
-      localStorage.setItem('servicos_publicados', JSON.stringify(servicos));
-      mostrarToast('✅ Serviço publicado com sucesso!');
-      setTimeout(() => navigate('/servicos-cli'), 1500);
+      try {
+        const dadosServico = {
+          titulo: formData.titulo,
+          descricao: formData.descricao,
+          categoria: formData.categoria,
+          preco: formData.preco,
+          urgente: formData.urgente,
+          contato: formData.contato,
+          localizacao: formData.localizacao,
+          fotos: fotos.map((f) => f.base64),
+        };
+        await criarProposta(dadosServico);
+        mostrarToast('✅ Serviço publicado com sucesso!');
+        setTimeout(() => navigate('/client/services'), 1500);
+      } catch (error) {
+        console.error(error);
+        mostrarToast('Erro ao publicar serviço', true);
+      }
     }
   };
 
@@ -373,4 +371,4 @@ const PublicarServico: React.FC = () => {
   );
 };
 
-export default PublicarServico;
+export default PostService;

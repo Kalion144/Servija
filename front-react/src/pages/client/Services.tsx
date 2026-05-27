@@ -1,8 +1,12 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { listarMinhasPropostas } from '../../services/api';
 
-const ServicosCliente = () => {
+const Services = () => {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [servicos, setServicos] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -16,11 +20,17 @@ const ServicosCliente = () => {
   };
 
   useEffect(() => {
-    const stored = JSON.parse(
-      localStorage.getItem('servicos_publicados') || '[]'
-    );
-    const clienteId = localStorage.getItem('clienteId') || 'cliente@email.com';
-    setServicos(stored.filter((s) => s.clienteId === clienteId));
+    const carregarDados = async () => {
+      try {
+        const dados = await listarMinhasPropostas();
+        if (dados.propostas) {
+          setServicos(dados.propostas);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    carregarDados();
   }, []);
 
   const openServiceModal = (servico) => {
@@ -33,13 +43,8 @@ const ServicosCliente = () => {
   };
   const handleUpdate = () => {
     showToast('🔄 Página atualizada!');
-    const stored = JSON.parse(
-      localStorage.getItem('servicos_publicados') || '[]'
-    );
-    const clienteId = localStorage.getItem('clienteId') || 'cliente@email.com';
-    setServicos(stored.filter((s) => s.clienteId === clienteId));
   };
-  const handleCreateService = () => navigate('/publicar-servico');
+  const handleCreateService = () => navigate('/client/post-service');
   const handleEdit = () => showToast('✏️ Edição em breve');
 
   const styles = `
@@ -91,7 +96,7 @@ const ServicosCliente = () => {
             <p>Acompanhe seus pedidos</p>
           </div>
           <div className="user-actions">
-            <button className="icon-btn" onClick={() => navigate('/home-cli')}>
+            <button className="icon-btn" onClick={() => navigate('/client/home')}>
               <i className="fas fa-home"></i>
             </button>
             <button
@@ -226,4 +231,5 @@ const ServicosCliente = () => {
   );
 };
 
-export default ServicosCliente;
+export default Services;
+

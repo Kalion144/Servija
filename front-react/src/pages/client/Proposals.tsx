@@ -1,27 +1,30 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { listarMinhasPropostas } from '../../services/api';
 
-const PropostasCliente = () => {
+const Proposals = () => {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
   const [propostas, setPropostas] = useState([]);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    const stored = JSON.parse(
-      localStorage.getItem('propostas_cliente') || '[]'
-    );
-    const clienteId = localStorage.getItem('clienteId') || 'cliente@email.com';
-    setPropostas(stored.filter((p) => p.clienteId === clienteId));
+    const carregarDados = async () => {
+      try {
+        const dados = await listarMinhasPropostas();
+        if (dados.propostas) {
+          setPropostas(dados.propostas);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    carregarDados();
   }, []);
 
   const handleAccept = (proposta) => {
-    const allPropostas = JSON.parse(
-      localStorage.getItem('propostas_cliente') || '[]'
-    );
-    const updated = allPropostas.map((p) =>
-      p.id === proposta.id ? { ...p, status: 'aceita' } : p
-    );
-    localStorage.setItem('propostas_cliente', JSON.stringify(updated));
     setToast({
       message: `Proposta de ${proposta.profissional} aceita!`,
       isError: false,
@@ -67,7 +70,7 @@ const PropostasCliente = () => {
             <p>Escolha a melhor opção para o seu serviço</p>
           </div>
           <div className="user-actions">
-            <button className="icon-btn" onClick={() => navigate('/home-cli')}>
+            <button className="icon-btn" onClick={() => navigate('/client/home')}>
               <i className="fas fa-home"></i>
             </button>
             <button className="icon-btn" onClick={() => navigate('/')}>
@@ -121,4 +124,5 @@ const PropostasCliente = () => {
   );
 };
 
-export default PropostasCliente;
+export default Proposals;
+
