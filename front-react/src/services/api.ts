@@ -235,6 +235,26 @@ export async function listarMinhasPropostasProfissional() {
   return res.json();
 }
 
+export async function listarPropostasMarketplace() {
+  const res = await fetch(`${API_URL}/professionals/proposals/marketplace`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.erro ?? 'Erro ao carregar marketplace');
+  return json;
+}
+
+export async function demonstrarInteresse(proposalId: number | string) {
+  const res = await fetch(`${API_URL}/professionals/proposals/${proposalId}/interest`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.erro ?? 'Erro ao registrar interesse');
+  return json;
+}
+
 export async function obterDadosUsuario() {
   const res = await fetch(`${API_URL}/auth/me`, {
     method: 'GET',
