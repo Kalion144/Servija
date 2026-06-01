@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { criarProposta } from '../../services/api';
+import { enviarProposta } from '../../services/api';
 
 export default function SendProposal() {
   const navigate = useNavigate();

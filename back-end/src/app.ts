@@ -1,11 +1,19 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 import authRoutes from "./routes/authRoutes.js";
+import clientAuthRoutes from "./routes/client/authRoutes.js";
+import professionalAuthRoutes from "./routes/professional/authRoutes.js";
 import professionalRoutes from "./routes/professional/index.js";
 import clientRoutes from "./routes/client/index.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(
   cors({
@@ -15,6 +23,9 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+
+// Servir arquivos staticamente (imagens)
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Middleware de logging de requisições
 app.use((req, res, next) => {
@@ -34,8 +45,11 @@ app.use((req, res, next) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/client/auth", clientAuthRoutes);
+app.use("/professional/auth", professionalAuthRoutes);
 app.use("/professionals", professionalRoutes);
 app.use("/client", clientRoutes);
+app.use("/api/upload", uploadRoutes);
 
 // Middleware de tratamento de erros
 app.use((err, req, res, next) => {

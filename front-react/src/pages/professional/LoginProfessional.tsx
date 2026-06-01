@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { ToastState } from '../lib/types';
+import { useAuth } from '../../contexts/AuthContext';
+import { ToastState } from '../../lib/types';
 
-export default function LoginUser() {
+export default function LoginProfessional() {
   const navigate = useNavigate();
-  const { login, usuario } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -28,22 +28,29 @@ export default function LoginUser() {
     try {
       const usuarioLogado = await login(email, password);
 
+      if (usuarioLogado?.tipo !== 'PROFISSIONAL') {
+        setToast({
+          message: 'Esta conta não é de profissional',
+          isError: true,
+        });
+        return;
+      }
+
       setToast({
         message: 'Login realizado com sucesso',
         isError: false,
       });
 
       setTimeout(() => {
-        if (usuarioLogado?.tipo === 'CLIENTE') {
-          navigate('/client/home');
-        } else if (usuarioLogado?.tipo === 'PROFISSIONAL') {
-          navigate('/professional/home');
-        }
+        navigate('/professional/home');
       }, 1000);
     } catch (error) {
       console.log(error);
       setToast({
-        message: error instanceof Error ? error.message : 'Erro ao conectar ao servidor',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Erro ao conectar ao servidor',
         isError: true,
       });
     }
@@ -53,10 +60,10 @@ export default function LoginUser() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <div className="logo">
+          <div className="logo professional">
             Servijá<span>.</span>
           </div>
-          <h2>Entrar</h2>
+          <h2>Entrar - Profissional</h2>
           <p>Digite seu e-mail e senha para acessar sua conta</p>
         </div>
         <div className="input-icon">
@@ -115,10 +122,10 @@ export default function LoginUser() {
         <div className="register-link">
           Não tem uma conta?{' '}
           <a
-            href="/cadastro"
+            href="/professional/cadastro"
             onClick={(e) => {
               e.preventDefault();
-              navigate('/cadastro');
+              navigate('/professional/cadastro');
             }}
           >
             Criar conta

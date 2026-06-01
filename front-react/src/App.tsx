@@ -1,51 +1,90 @@
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Index from './pages/Index';
-import Cadastro from './pages/Cadastro';
-import LoginUser from './pages/LoginUser';
 import Sobre from './pages/Sobre';
 import ClientHome from './pages/client/Home';
 import ClientServices from './pages/client/Services';
-import ClientPostService from './pages/client/PostService';
 import ClientProposals from './pages/client/Proposals';
 import ClientProfile from './pages/client/Profile';
+import LoginClient from './pages/client/LoginClient';
+import CadastroClient from './pages/client/CadastroClient';
 import ProfessionalHome from './pages/professional/Home';
 import ProfessionalProposals from './pages/professional/Proposals';
 import ProfessionalServiceDetails from './pages/professional/ServiceDetails';
 import ProfessionalSendProposal from './pages/professional/SendProposal';
 import ProfessionalProfile from './pages/professional/Profile';
+import LoginProfessional from './pages/professional/LoginProfessional';
+import CadastroProfessional from './pages/professional/CadastroProfessional';
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/login" element={<LoginUser />} />
         <Route path="/sobre" element={<Sobre />} />
 
         {/* Rotas do Cliente */}
-        <Route path="/client/home" element={<ClientHome />} />
-        <Route path="/client/services" element={<ClientServices />} />
-        <Route path="/client/post-service" element={<ClientPostService />} />
-        <Route path="/client/proposals" element={<ClientProposals />} />
-        <Route path="/client/profile" element={<ClientProfile />} />
+        <Route path="/client/login" element={<LoginClient />} />
+        <Route path="/client/cadastro" element={<CadastroClient />} />
+        <Route path="/client/home" element={
+          <ProtectedRoute allowedType="CLIENTE">
+            <ClientHome />
+          </ProtectedRoute>
+        } />
+        <Route path="/client/services" element={
+          <ProtectedRoute allowedType="CLIENTE">
+            <ClientServices />
+          </ProtectedRoute>
+        } />
+        <Route path="/client/proposals" element={
+          <ProtectedRoute allowedType="CLIENTE">
+            <ClientProposals />
+          </ProtectedRoute>
+        } />
+        <Route path="/client/profile" element={
+          <ProtectedRoute allowedType="CLIENTE">
+            <ClientProfile />
+          </ProtectedRoute>
+        } />
 
         {/* Rotas do Profissional */}
-        <Route path="/professional/home" element={<ProfessionalHome />} />
+        <Route path="/professional/login" element={<LoginProfessional />} />
+        <Route path="/professional/cadastro" element={<CadastroProfessional />} />
+        <Route path="/professional/home" element={
+          <ProtectedRoute allowedType="PROFISSIONAL">
+            <ProfessionalHome />
+          </ProtectedRoute>
+        } />
         <Route
           path="/professional/proposals"
-          element={<ProfessionalProposals />}
+          element={
+            <ProtectedRoute allowedType="PROFISSIONAL">
+              <ProfessionalProposals />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/professional/service-details/:id"
-          element={<ProfessionalServiceDetails />}
+          element={
+            <ProtectedRoute allowedType="PROFISSIONAL">
+              <ProfessionalServiceDetails />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/professional/send-proposal"
-          element={<ProfessionalSendProposal />}
+          element={
+            <ProtectedRoute allowedType="PROFISSIONAL">
+              <ProfessionalSendProposal />
+            </ProtectedRoute>
+          }
         />
-        <Route path="/professional/profile" element={<ProfessionalProfile />} />
+        <Route path="/professional/profile" element={
+          <ProtectedRoute allowedType="PROFISSIONAL">
+            <ProfessionalProfile />
+          </ProtectedRoute>
+        } />
       </Routes>
     </AuthProvider>
   );

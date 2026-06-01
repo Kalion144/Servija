@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { listarMinhasPropostasProfissional } from '../../services/api';
+import { listarTodosServicos } from '../../services/api';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -21,9 +21,9 @@ const Home = () => {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        const dados = await listarMinhasPropostasProfissional();
-        if (Array.isArray(dados)) {
-          setServicosDisponiveis(dados);
+        const dados = await listarTodosServicos();
+        if (dados.servicos) {
+          setServicosDisponiveis(dados.servicos);
         }
       } catch (error) {
         console.error(error);
@@ -136,26 +136,23 @@ const Home = () => {
         </div>
         <div className="services-grid">
           {servicosDisponiveis.map((servico) => (
-            <div
-              key={servico.id}
-              className="service-card"
-              onClick={() => handleCardClick(servico)}
-            >
-              <div className="card-header">
-                <span className="prof-name">{servico.clienteNome}</span>
-                <span className="rating">⭐ Novo</span>
-              </div>
-              <div className="service-name">{servico.titulo}</div>
-              <div className="service-footer">
-                {servico.urgente && (
-                  <div className="urgent-badge">⚠️ Urgente</div>
-                )}
-                <div className="distance-price">
-                  📍 {servico.localizacao} • R${servico.preco}
+                <div
+                  key={servico.id}
+                  className="service-card"
+                  onClick={() => handleCardClick(servico)}
+                >
+                  <div className="card-header">
+                    <span className="prof-name">{servico.cliente_nome}</span>
+                    <span className="rating">⭐ Novo</span>
+                  </div>
+                  <div className="service-name">{servico.titulo}</div>
+                  <div className="service-footer">
+                    <div className="distance-price">
+                      📍 {servico.prazo || '—'} • {servico.valor ? `R$${servico.valor.toFixed(2)}` : '—'}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              ))}
         </div>
       </div>
       {toastVisible && <div className="success-toast">{toastMessage}</div>}

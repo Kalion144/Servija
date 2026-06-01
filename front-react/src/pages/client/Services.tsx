@@ -1,8 +1,12 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { listarMinhasPropostas, atualizarProposta, deletarProposta } from '../../services/api';
+import {
+  listarMeusServicos,
+  atualizarProposta,
+  deletarProposta,
+  criarServico,
+} from '../../services/api';
 
 const Services = () => {
   const navigate = useNavigate();
@@ -11,7 +15,19 @@ const Services = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ titulo: '', descricao: '', valor: '', prazo: '' });
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    titulo: '',
+    descricao: '',
+    valor: '',
+    prazo: '',
+  });
+  const [createForm, setCreateForm] = useState({
+    titulo: '',
+    descricao: '',
+    valor: '',
+    prazo: '',
+  });
   const [salvando, setSalvando] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
@@ -24,7 +40,9 @@ const Services = () => {
     toastTimeoutRef.current = setTimeout(() => setToastMessage(null), 3000);
   };
 
-  useEffect(() => { carregarServicos(); }, []);
+  useEffect(() => {
+    carregarServicos();
+  }, []);
 
   const openServiceModal = (servico) => {
     setSelectedService(servico);
@@ -56,14 +74,42 @@ const Services = () => {
   };
   const carregarServicos = async () => {
     try {
-      const dados = await listarMinhasPropostas();
-      if (dados.propostas) setServicos(dados.propostas);
+      const dados = await listarMeusServicos();
+      if (dados.servicos) setServicos(dados.servicos);
     } catch (error) {
       console.error(error);
     }
   };
 
-  const handleCreateService = () => navigate('/client/post-service');
+  const handleCreateService = () => {
+    setCreateForm({ titulo: '', descricao: '', valor: '', prazo: '' });
+    setCreateModalOpen(true);
+  };
+
+  const salvarNovoPedido = async () => {
+    if (!createForm.titulo.trim()) {
+      showToast('❌ Título obrigatório');
+      return;
+    }
+    setSalvando(true);
+    try {
+      await criarServico({
+        titulo: createForm.titulo,
+        descricao: createForm.descricao,
+        valor: createForm.valor ? Number(createForm.valor) : null,
+        prazo: createForm.prazo,
+      });
+      showToast('✅ Pedido criado!');
+      setCreateModalOpen(false);
+      await carregarServicos();
+    } catch (err) {
+      showToast(
+        `❌ ${err instanceof Error ? err.message : 'Erro ao criar pedido'}`
+      );
+    } finally {
+      setSalvando(false);
+    }
+  };
 
   const abrirEdicao = (servico) => {
     setEditForm({
@@ -78,7 +124,10 @@ const Services = () => {
   };
 
   const salvarEdicao = async () => {
-    if (!editForm.titulo.trim()) { showToast('❌ Título obrigatório'); return; }
+    if (!editForm.titulo.trim()) {
+      showToast('❌ Título obrigatório');
+      return;
+    }
     setSalvando(true);
     try {
       await atualizarProposta(selectedService.id, {
@@ -161,12 +210,18 @@ const Services = () => {
             <p>Acompanhe seus pedidos</p>
           </div>
           <div className="user-actions">
-            <button className="icon-btn" onClick={() => navigate('/client/home')}>
+            <button
+              className="icon-btn"
+              onClick={() => navigate('/client/home')}
+            >
               <i className="fas fa-home"></i>
             </button>
             <button
               className="icon-btn"
-              onClick={async () => { await logout(); navigate('/login'); }}
+              onClick={async () => {
+                await logout();
+                navigate('/login');
+              }}
             >
               <i className="fas fa-sign-out-alt"></i>
             </button>
@@ -262,93 +317,254 @@ const Services = () => {
               </button>
             </div>
             <div className="modal-body">
-              {selectedService && (() => {
-                const statusConfig = {
-                  PENDENTE:     { label: 'Pendente',     color: '#d97706', bg: '#fef3c7', icon: 'fa-clock' },
-                  ACEITA:       { label: 'Aceita',       color: '#16a34a', bg: '#dcfce7', icon: 'fa-check-circle' },
-                  RECUSADA:     { label: 'Recusada',     color: '#dc2626', bg: '#fee2e2', icon: 'fa-times-circle' },
-                  EM_ANDAMENTO: { label: 'Em andamento', color: '#2563eb', bg: '#dbeafe', icon: 'fa-spinner' },
-                  FINALIZADA:   { label: 'Finalizada',   color: '#7c3aed', bg: '#ede9fe', icon: 'fa-flag-checkered' },
-                  AVALIADA:     { label: 'Avaliada',     color: '#0891b2', bg: '#cffafe', icon: 'fa-star' },
-                  CANCELADA:    { label: 'Cancelada',    color: '#6b7280', bg: '#f3f4f6', icon: 'fa-ban' },
-                };
-                const s = statusConfig[selectedService.status] ?? { label: selectedService.status, color: '#6b7280', bg: '#f3f4f6', icon: 'fa-circle' };
-                const podeEditar = selectedService.status === 'PENDENTE';
-                const podeExcluir = selectedService.status === 'PENDENTE' || selectedService.status === 'FINALIZADA';
-                return (
-                  <>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
-                        {selectedService.titulo}
-                      </h2>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: s.bg, color: s.color, padding: '0.3rem 0.8rem', borderRadius: '2rem', fontSize: '0.8rem', fontWeight: 700 }}>
-                        <i className={`fas ${s.icon}`}></i> {s.label}
-                      </span>
-                    </div>
-
-                    {selectedService.descricao && (
-                      <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '0.8rem 1rem', marginBottom: '1rem', color: '#475569', fontSize: '0.93rem', lineHeight: 1.6 }}>
-                        <i className="fas fa-align-left" style={{ color: '#f97316', marginRight: '0.4rem' }}></i>
-                        {selectedService.descricao}
+              {selectedService &&
+                (() => {
+                  const statusConfig = {
+                    PENDENTE: {
+                      label: 'Pendente',
+                      color: '#d97706',
+                      bg: '#fef3c7',
+                      icon: 'fa-clock',
+                    },
+                    ACEITA: {
+                      label: 'Aceita',
+                      color: '#16a34a',
+                      bg: '#dcfce7',
+                      icon: 'fa-check-circle',
+                    },
+                    RECUSADA: {
+                      label: 'Recusada',
+                      color: '#dc2626',
+                      bg: '#fee2e2',
+                      icon: 'fa-times-circle',
+                    },
+                    EM_ANDAMENTO: {
+                      label: 'Em andamento',
+                      color: '#2563eb',
+                      bg: '#dbeafe',
+                      icon: 'fa-spinner',
+                    },
+                    FINALIZADA: {
+                      label: 'Finalizada',
+                      color: '#7c3aed',
+                      bg: '#ede9fe',
+                      icon: 'fa-flag-checkered',
+                    },
+                    AVALIADA: {
+                      label: 'Avaliada',
+                      color: '#0891b2',
+                      bg: '#cffafe',
+                      icon: 'fa-star',
+                    },
+                    CANCELADA: {
+                      label: 'Cancelada',
+                      color: '#6b7280',
+                      bg: '#f3f4f6',
+                      icon: 'fa-ban',
+                    },
+                  };
+                  const s = statusConfig[selectedService.status] ?? {
+                    label: selectedService.status,
+                    color: '#6b7280',
+                    bg: '#f3f4f6',
+                    icon: 'fa-circle',
+                  };
+                  const podeEditar = selectedService.status === 'PENDENTE';
+                  const podeExcluir =
+                    selectedService.status === 'PENDENTE' ||
+                    selectedService.status === 'FINALIZADA';
+                  return (
+                    <>
+                      <div style={{ marginBottom: '1rem' }}>
+                        <h2
+                          style={{
+                            fontSize: '1.25rem',
+                            fontWeight: 700,
+                            color: '#0f172a',
+                            marginBottom: '0.5rem',
+                          }}
+                        >
+                          {selectedService.titulo}
+                        </h2>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            background: s.bg,
+                            color: s.color,
+                            padding: '0.3rem 0.8rem',
+                            borderRadius: '2rem',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                          }}
+                        >
+                          <i className={`fas ${s.icon}`}></i> {s.label}
+                        </span>
                       </div>
-                    )}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.7rem', marginBottom: '1.2rem' }}>
-                      <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '0.75rem 1rem' }}>
-                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginBottom: '0.2rem' }}>
-                          <i className="fas fa-dollar-sign" style={{ color: '#16a34a' }}></i> VALOR SUGERIDO
+                      {selectedService.descricao && (
+                        <div
+                          style={{
+                            background: '#f8fafc',
+                            borderRadius: '10px',
+                            padding: '0.8rem 1rem',
+                            marginBottom: '1rem',
+                            color: '#475569',
+                            fontSize: '0.93rem',
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          <i
+                            className="fas fa-align-left"
+                            style={{ color: '#f97316', marginRight: '0.4rem' }}
+                          ></i>
+                          {selectedService.descricao}
                         </div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#16a34a' }}>
-                          {selectedService.valor ? `R$ ${Number(selectedService.valor).toFixed(2)}` : '—'}
-                        </div>
-                      </div>
-                      <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '0.75rem 1rem' }}>
-                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginBottom: '0.2rem' }}>
-                          <i className="fas fa-calendar-alt" style={{ color: '#f97316' }}></i> PRAZO
-                        </div>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}>
-                          {selectedService.prazo || '—'}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                      {podeEditar && (
-                        <button className="create-btn" style={{ margin: 0 }} onClick={() => abrirEdicao(selectedService)}>
-                          ✏️ Editar pedido
-                        </button>
                       )}
-                      {podeExcluir && (
-                        !confirmDelete ? (
-                          <button className="btn-delete" onClick={() => setConfirmDelete(true)}>
-                            🗑️ Excluir pedido
-                          </button>
-                        ) : (
-                          <div className="confirm-box">
-                            <p>Tem certeza que deseja excluir este pedido?</p>
-                            <div className="modal-actions">
-                              <button className="btn-cancel-edit" onClick={() => setConfirmDelete(false)}>Cancelar</button>
-                              <button className="btn-delete-confirm" onClick={excluirPedido} disabled={excluindo}>
-                                {excluindo ? 'Excluindo...' : 'Confirmar exclusão'}
-                              </button>
-                            </div>
+
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '0.7rem',
+                          marginBottom: '1.2rem',
+                        }}
+                      >
+                        <div
+                          style={{
+                            background: '#f8fafc',
+                            borderRadius: '10px',
+                            padding: '0.75rem 1rem',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: '0.75rem',
+                              color: '#94a3b8',
+                              fontWeight: 600,
+                              marginBottom: '0.2rem',
+                            }}
+                          >
+                            <i
+                              className="fas fa-dollar-sign"
+                              style={{ color: '#16a34a' }}
+                            ></i>{' '}
+                            VALOR SUGERIDO
                           </div>
-                        )
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
+                          <div
+                            style={{
+                              fontSize: '1.1rem',
+                              fontWeight: 700,
+                              color: '#16a34a',
+                            }}
+                          >
+                            {selectedService.valor
+                              ? `R$ ${Number(selectedService.valor).toFixed(2)}`
+                              : '—'}
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            background: '#f8fafc',
+                            borderRadius: '10px',
+                            padding: '0.75rem 1rem',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: '0.75rem',
+                              color: '#94a3b8',
+                              fontWeight: 600,
+                              marginBottom: '0.2rem',
+                            }}
+                          >
+                            <i
+                              className="fas fa-calendar-alt"
+                              style={{ color: '#f97316' }}
+                            ></i>{' '}
+                            PRAZO
+                          </div>
+                          <div
+                            style={{
+                              fontSize: '0.95rem',
+                              fontWeight: 600,
+                              color: '#334155',
+                            }}
+                          >
+                            {selectedService.prazo || '—'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.6rem',
+                        }}
+                      >
+                        {podeEditar && (
+                          <button
+                            className="create-btn"
+                            style={{ margin: 0 }}
+                            onClick={() => abrirEdicao(selectedService)}
+                          >
+                            ✏️ Editar pedido
+                          </button>
+                        )}
+                        {podeExcluir &&
+                          (!confirmDelete ? (
+                            <button
+                              className="btn-delete"
+                              onClick={() => setConfirmDelete(true)}
+                            >
+                              🗑️ Excluir pedido
+                            </button>
+                          ) : (
+                            <div className="confirm-box">
+                              <p>Tem certeza que deseja excluir este pedido?</p>
+                              <div className="modal-actions">
+                                <button
+                                  className="btn-cancel-edit"
+                                  onClick={() => setConfirmDelete(false)}
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  className="btn-delete-confirm"
+                                  onClick={excluirPedido}
+                                  disabled={excluindo}
+                                >
+                                  {excluindo
+                                    ? 'Excluindo...'
+                                    : 'Confirmar exclusão'}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </>
+                  );
+                })()}
             </div>
           </div>
         </div>
       </div>
       {/* Modal de edição */}
-      <div className={`modal ${editModalOpen ? 'active' : ''}`} onClick={() => setEditModalOpen(false)}>
+      <div
+        className={`modal ${editModalOpen ? 'active' : ''}`}
+        onClick={() => setEditModalOpen(false)}
+      >
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
             <h3>✏️ Editar pedido</h3>
-            <button className="close-modal" onClick={() => setEditModalOpen(false)}>&times;</button>
+            <button
+              className="close-modal"
+              onClick={() => setEditModalOpen(false)}
+            >
+              &times;
+            </button>
           </div>
           <div className="modal-body">
             <div className="edit-field">
@@ -356,14 +572,18 @@ const Services = () => {
               <input
                 type="text"
                 value={editForm.titulo}
-                onChange={(e) => setEditForm((f) => ({ ...f, titulo: e.target.value }))}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, titulo: e.target.value }))
+                }
               />
             </div>
             <div className="edit-field">
               <label>Descrição</label>
               <textarea
                 value={editForm.descricao}
-                onChange={(e) => setEditForm((f) => ({ ...f, descricao: e.target.value }))}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, descricao: e.target.value }))
+                }
               />
             </div>
             <div className="edit-field">
@@ -372,7 +592,9 @@ const Services = () => {
                 type="number"
                 step="0.01"
                 value={editForm.valor}
-                onChange={(e) => setEditForm((f) => ({ ...f, valor: e.target.value }))}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, valor: e.target.value }))
+                }
               />
             </div>
             <div className="edit-field">
@@ -381,13 +603,103 @@ const Services = () => {
                 type="text"
                 placeholder="Ex: 3 dias, até 10/07"
                 value={editForm.prazo}
-                onChange={(e) => setEditForm((f) => ({ ...f, prazo: e.target.value }))}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, prazo: e.target.value }))
+                }
               />
             </div>
             <div className="modal-actions">
-              <button className="btn-cancel-edit" onClick={() => setEditModalOpen(false)}>Cancelar</button>
-              <button className="btn-save" onClick={salvarEdicao} disabled={salvando}>
+              <button
+                className="btn-cancel-edit"
+                onClick={() => setEditModalOpen(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-save"
+                onClick={salvarEdicao}
+                disabled={salvando}
+              >
                 {salvando ? 'Salvando...' : 'Salvar alterações'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de criação de pedido */}
+      <div
+        className={`modal ${createModalOpen ? 'active' : ''}`}
+        onClick={() => setCreateModalOpen(false)}
+      >
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>➕ Criar novo pedido</h3>
+            <button
+              className="close-modal"
+              onClick={() => setCreateModalOpen(false)}
+            >
+              &times;
+            </button>
+          </div>
+          <div className="modal-body">
+            <div className="edit-field">
+              <label>Título *</label>
+              <input
+                type="text"
+                placeholder="Ex: Instalação elétrica"
+                value={createForm.titulo}
+                onChange={(e) =>
+                  setCreateForm((f) => ({ ...f, titulo: e.target.value }))
+                }
+              />
+            </div>
+            <div className="edit-field">
+              <label>Descrição</label>
+              <textarea
+                placeholder="Descreva o serviço que você precisa"
+                value={createForm.descricao}
+                onChange={(e) =>
+                  setCreateForm((f) => ({ ...f, descricao: e.target.value }))
+                }
+              />
+            </div>
+            <div className="edit-field">
+              <label>Valor sugerido (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Ex: 150.00"
+                value={createForm.valor}
+                onChange={(e) =>
+                  setCreateForm((f) => ({ ...f, valor: e.target.value }))
+                }
+              />
+            </div>
+            <div className="edit-field">
+              <label>Prazo</label>
+              <input
+                type="text"
+                placeholder="Ex: 3 dias, até 10/07"
+                value={createForm.prazo}
+                onChange={(e) =>
+                  setCreateForm((f) => ({ ...f, prazo: e.target.value }))
+                }
+              />
+            </div>
+            <div className="modal-actions">
+              <button
+                className="btn-cancel-edit"
+                onClick={() => setCreateModalOpen(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-save"
+                onClick={salvarNovoPedido}
+                disabled={salvando}
+              >
+                {salvando ? 'Criando...' : 'Criar pedido'}
               </button>
             </div>
           </div>
@@ -408,4 +720,3 @@ const Services = () => {
 };
 
 export default Services;
-

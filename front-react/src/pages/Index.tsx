@@ -34,24 +34,17 @@ export default function Index() {
         <div className="button-group">
           <button
             className="btn btn-primary"
-            onClick={() => navigate('/cadastro')}
+            onClick={() => navigate('/client/login')}
           >
-            Criar conta
+            Sou Cliente
           </button>
           <button
             className="btn btn-outline"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/professional/login')}
           >
-            Entrar
+            Sou Profissional
           </button>
         </div>
-        <button
-          className="professional-link"
-          onClick={() => showToast('👨‍🔧 Área para prestadores em breve')}
-        >
-          <i className="fas fa-briefcase"></i> Sou profissional{' '}
-          <i className="fas fa-arrow-right"></i>
-        </button>
       </div>
       {toast && (
         <Toast

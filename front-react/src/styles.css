@@ -80,6 +80,8 @@ body::before {
   color: #f97316;
   margin-bottom: 1rem;
 }
+.logo.client { color: #2563eb; }
+.logo.professional { color: #f97316; }
 .logo span { color: #1e293b; }
 
 .welcome-card h1 {
@@ -112,6 +114,7 @@ body::before {
   text-decoration: none;
   display: inline-block;
 }
+/* Botões padrão (laranja para profissional) */
 .btn-primary {
   background: #f97316;
   color: white;
@@ -127,6 +130,46 @@ body::before {
   color: #f97316;
 }
 .btn-outline:hover {
+  background: #fff7ed;
+  transform: translateY(-2px);
+}
+
+/* Botões específicos para cliente (azul) */
+.btn-primary-client {
+  background: #2563eb;
+  color: white;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+}
+.btn-primary-client:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+}
+.btn-outline-client {
+  background: transparent;
+  border: 1.5px solid #2563eb;
+  color: #2563eb;
+}
+.btn-outline-client:hover {
+  background: #eff6ff;
+  transform: translateY(-2px);
+}
+
+/* Botões específicos para profissional (laranja) */
+.btn-primary-professional {
+  background: #f97316;
+  color: white;
+  box-shadow: 0 2px 8px rgba(249,115,22,0.25);
+}
+.btn-primary-professional:hover {
+  background: #ea580c;
+  transform: translateY(-2px);
+}
+.btn-outline-professional {
+  background: transparent;
+  border: 1.5px solid #f97316;
+  color: #f97316;
+}
+.btn-outline-professional:hover {
   background: #fff7ed;
   transform: translateY(-2px);
 }
@@ -216,6 +259,12 @@ h1 {
   padding-left: 1rem;
   margin-bottom: 1.8rem;
 }
+h1.client {
+  border-left-color: #2563eb;
+}
+h1.professional {
+  border-left-color: #f97316;
+}
 .input-group {
   margin-bottom: 1.6rem;
   display: flex;
@@ -235,6 +284,14 @@ h1 {
   font-family: 'Inter', sans-serif;
 }
 .input-group input:focus {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+}
+.input-group.client input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+.input-group.professional input:focus {
   border-color: #f97316;
   box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
 }

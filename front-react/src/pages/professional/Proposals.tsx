@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { listarMinhasPropostasProfissional } from '../../services/api';
+import {
+  listarMinhasPropostasProfissional,
+  marcarServicoComoConcluido,
+} from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
-type FiltroProposta = 'all' | 'PENDENTE' | 'ACEITA' | 'RECUSADA';
+type FiltroProposta =
+  | 'all'
+  | 'PENDENTE'
+  | 'ACEITA'
+  | 'RECUSADA'
+  | 'FINALIZADA'
+  | 'EM_ANDAMENTO';
 
 interface PropostaApi {
   id: number;
@@ -18,7 +27,7 @@ interface PropostaApi {
     id: number;
     proposal_id: number;
     professional_id: number;
-    status: 'PENDENTE' | 'ACEITA' | 'RECUSADA';
+    status: 'PENDENTE' | 'ACEITA' | 'RECUSADA' | 'FINALIZADA' | 'EM_ANDAMENTO';
   };
 }
 
@@ -45,6 +54,19 @@ const Proposals: React.FC = () => {
       setToastType('error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarcarConcluido = async (proposalProfessionalId: number) => {
+    try {
+      await marcarServicoComoConcluido(proposalProfessionalId);
+      setToastMessage('✅ Serviço marcado como concluído!');
+      setToastType('success');
+      await loadPropostas();
+    } catch (error) {
+      console.error(error);
+      setToastMessage('Erro ao marcar serviço como concluído');
+      setToastType('error');
     }
   };
 
@@ -92,12 +114,18 @@ const Proposals: React.FC = () => {
           if (proposta.proposalProfessional.status === 'PENDENTE') {
             statusClass = 'status-aguardando';
             statusText = '⏳ Aguardando resposta';
-          } else if (proposta.proposalProfessional.status === 'ACEITA') {
+          } else if (
+            proposta.proposalProfessional.status === 'ACEITA' ||
+            proposta.proposalProfessional.status === 'EM_ANDAMENTO'
+          ) {
             statusClass = 'status-aceita';
-            statusText = '✅ Aceita';
+            statusText = '✅ Em andamento';
           } else if (proposta.proposalProfessional.status === 'RECUSADA') {
             statusClass = 'status-recusada';
             statusText = '❌ Recusada';
+          } else if (proposta.proposalProfessional.status === 'FINALIZADA') {
+            statusClass = 'status-aceita';
+            statusText = '✅ Concluída';
           }
 
           let valorDisplay = proposta.valor
@@ -165,12 +193,36 @@ const Proposals: React.FC = () => {
               </div>
               <div className="proposal-date">
                 <span>📨 Proposta ID: {proposta.id}</span>
-                <Link
-                  to={`/client/proposals/${proposta.id}`}
-                  className="detail-link"
+                <div
+                  style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
                 >
-                  Ver detalhes →
-                </Link>
+                  {(proposta.proposalProfessional.status === 'ACEITA' ||
+                    proposta.proposalProfessional.status ===
+                      'EM_ANDAMENTO') && (
+                    <button
+                      style={{
+                        padding: '6px 16px',
+                        background: '#f97316',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '20px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                      }}
+                      onClick={() =>
+                        handleMarcarConcluido(proposta.proposalProfessional.id)
+                      }
+                    >
+                      ✅ Marcar como concluído
+                    </button>
+                  )}
+                  <Link
+                    to={`/client/proposals/${proposta.id}`}
+                    className="detail-link"
+                  >
+                    Ver detalhes →
+                  </Link>
+                </div>
               </div>
             </div>
           );
@@ -575,6 +627,18 @@ const Proposals: React.FC = () => {
               onClick={() => setCurrentFilter('ACEITA')}
             >
               ✅ Aceitas
+            </button>
+            <button
+              className={`filter-btn ${currentFilter === 'EM_ANDAMENTO' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('EM_ANDAMENTO')}
+            >
+              🔧 Em andamento
+            </button>
+            <button
+              className={`filter-btn ${currentFilter === 'FINALIZADA' ? 'active' : ''}`}
+              onClick={() => setCurrentFilter('FINALIZADA')}
+            >
+              ✅ Concluídas
             </button>
             <button
               className={`filter-btn ${currentFilter === 'RECUSADA' ? 'active' : ''}`}

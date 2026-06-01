@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { ProfessionalController } from "../../controllers/professionalController.js";
-import { ProposalController } from "../../controllers/proposalController.js";
+import { ProfessionalController } from "../../controllers/professional/professionalController.js";
+import { ProposalController } from "../../controllers/professional/proposalController.js";
+import { ServiceController } from "../../controllers/professional/ServiceController.js";
 import { authenticateToken } from "../../middleware/authMiddleware.js";
 
 const router = Router();
@@ -13,17 +14,19 @@ router.put(
   authenticateToken,
   ProfessionalController.atualizarPerfil,
 );
-router.post(
-  "/services",
-  authenticateToken,
-  ProfessionalController.adicionarServico,
-);
+router.post("/services", authenticateToken, ServiceController.adicionarServico);
 router.delete(
   "/services/:id",
   authenticateToken,
-  ProfessionalController.removerServico,
+  ServiceController.removerServico,
+);
+router.get(
+  "/services",
+  authenticateToken,
+  ServiceController.listarServicosProfissional,
 );
 
+router.post("/proposals", authenticateToken, ProposalController.enviar);
 router.post(
   "/proposals/:id/accept",
   authenticateToken,
@@ -33,6 +36,11 @@ router.post(
   "/proposals/:id/reject",
   authenticateToken,
   ProposalController.recusar,
+);
+router.post(
+  "/proposals/:proposalProfessionalId/complete",
+  authenticateToken,
+  ProposalController.marcarConcluido,
 );
 router.get("/proposals", authenticateToken, ProposalController.listarMinhas);
 

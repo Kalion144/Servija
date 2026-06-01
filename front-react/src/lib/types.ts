@@ -42,6 +42,17 @@ export interface User {
   email: string;
   tipo: UserType;
   foto?: string | null;
+  telefone?: string | null;
+  cpf?: string | null;
+  endereco?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  dataNascimento?: string | null;
+  bio?: string | null;
+  notificacoes?: string | null;
+  idioma?: string | null;
+  created_at: number;
+  perfilProfissional?: any;
 }
 
 // ==========================================

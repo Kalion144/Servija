@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { FormErrors, Toast } from '../lib/types';
+import { useAuth } from '../../contexts/AuthContext';
+import { cadastrarCliente } from '../../services/api';
+import { FormErrors, Toast } from '../../lib/types';
 
-export default function Cadastro() {
+export default function CadastroClient() {
   const navigate = useNavigate();
   const { cadastrar } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -36,32 +36,23 @@ export default function Cadastro() {
     return '';
   };
 
-  const validateUserType = () => {
-    if (!userType) return 'Selecione um tipo de cadastro.';
-
-    return '';
-  };
-
   const handleSubmit = async () => {
     const nameErr = validateName();
     const emailErr = validateEmail();
     const passErr = validatePassword();
-    const typeErr = validateUserType();
 
     setErrors({
       name: nameErr,
       email: emailErr,
       password: passErr,
-      userType: typeErr,
     });
 
-    if (!nameErr && !emailErr && !passErr && !typeErr) {
+    if (!nameErr && !emailErr && !passErr) {
       try {
-        await cadastrar({
+        await cadastrarCliente({
           nome: fullName,
           email,
           senha: password,
-          tipo: userType as 'CLIENTE' | 'PROFISSIONAL',
         });
 
         setToast({
@@ -70,9 +61,7 @@ export default function Cadastro() {
         });
 
         setTimeout(() => {
-          navigate(
-            userType === 'CLIENTE' ? '/client/home' : '/professional/home'
-          );
+          navigate('/client/login');
         }, 1500);
       } catch (error) {
         console.log(error);
@@ -97,9 +86,9 @@ export default function Cadastro() {
   return (
     <div className="register-card">
       <div className="form-container">
-        <h1>Cadastro</h1>
+        <h1 className="client">Cadastro - Cliente</h1>
 
-        <div className="input-group">
+        <div className="input-group client">
           <label>
             <i className="fas fa-user"></i> Nome Completo{' '}
             <span className="required-star">*</span>
@@ -119,7 +108,7 @@ export default function Cadastro() {
           )}
         </div>
 
-        <div className="input-group">
+        <div className="input-group client">
           <label>
             <i className="fas fa-envelope"></i> E-mail{' '}
             <span className="required-star">*</span>
@@ -139,7 +128,7 @@ export default function Cadastro() {
           )}
         </div>
 
-        <div className="input-group">
+        <div className="input-group client">
           <label>
             <i className="fas fa-lock"></i> Senha{' '}
             <span className="required-star">*</span>
@@ -164,58 +153,15 @@ export default function Cadastro() {
           )}
         </div>
 
-        <div className="radio-group">
-          <div className="radio-label-title">
-            <i className="fas fa-briefcase"></i> Tipo de Cadastro{' '}
-            <span className="required-star">*</span>
-          </div>
-
-          <div className="radio-options">
-            <div
-              className={`radio-card ${userType === 'CLIENTE' ? 'selected' : ''}`}
-              onClick={() => setUserType('CLIENTE')}
-            >
-              <input
-                type="radio"
-                name="userType"
-                checked={userType === 'CLIENTE'}
-                readOnly
-              />
-
-              <span>Cliente</span>
-            </div>
-
-            <div
-              className={`radio-card ${userType === 'PROFISSIONAL' ? 'selected' : ''}`}
-              onClick={() => setUserType('PROFISSIONAL')}
-            >
-              <input
-                type="radio"
-                name="userType"
-                checked={userType === 'PROFISSIONAL'}
-                readOnly
-              />
-
-              <span>Prestador de serviços</span>
-            </div>
-          </div>
-
-          {errors.userType && (
-            <div className="error-message">
-              <i className="fas fa-exclamation-circle"></i> {errors.userType}
-            </div>
-          )}
-        </div>
-
         <div className="action-buttons">
           <button
-            className="btn btn-outline"
-            onClick={() => navigate('/')}
+            className="btn btn-outline-client"
+            onClick={() => navigate('/client/login')}
           >
             Cancelar
           </button>
 
-          <button className="btn btn-primary" onClick={handleSubmit}>
+          <button className="btn btn-primary-client" onClick={handleSubmit}>
             Cadastrar
           </button>
         </div>
@@ -229,7 +175,7 @@ export default function Cadastro() {
         <div
           className="success-toast"
           style={{
-            background: toast.isError ? '#dc2626' : '#f97316',
+            background: toast.isError ? '#dc2626' : '#2563eb',
           }}
         >
           <i

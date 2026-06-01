@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -6,14 +5,34 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-import { loginUser, cadastrarUser, logoutUser, obterDadosUsuario } from '../services/api';
+import {
+  loginUser,
+  cadastrarUser,
+  logoutUser,
+  obterDadosUsuario,
+  atualizarUsuario,
+  loginCliente,
+  loginProfissional,
+  logoutCliente,
+  logoutProfissional,
+} from '../services/api';
 
 interface Usuario {
   id: number;
   nome: string;
   email: string;
   tipo: 'CLIENTE' | 'PROFISSIONAL';
-  foto?: string;
+  foto?: string | null;
+  telefone?: string | null;
+  cpf?: string | null;
+  endereco?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  dataNascimento?: string | null;
+  bio?: string | null;
+  notificacoes?: string | null;
+  idioma?: string | null;
+  created_at: number;
   perfilProfissional?: any;
 }
 
@@ -23,6 +42,7 @@ interface AuthContextType {
   login: (email: string, senha: string) => Promise<Usuario>;
   cadastrar: (data: any) => Promise<Usuario>;
   logout: () => Promise<void>;
+  updateUser: (data: Partial<Usuario>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,13 +81,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await logoutUser();
-    setUsuario(null);
+    try {
+      if (usuario?.tipo === 'CLIENTE') {
+        await logoutCliente();
+      } else if (usuario?.tipo === 'PROFISSIONAL') {
+        await logoutProfissional();
+      } else {
+        await logoutUser();
+      }
+    } catch (error) {
+      console.error('Erro no logout:', error);
+    } finally {
+      setUsuario(null);
+    }
+  };
+
+  const updateUser = async (data: Partial<Usuario>) => {
+    if ('id' in data) {
+      // If we're passing a full user object, just update state
+      setUsuario(prev => prev ? { ...prev, ...data } : data as Usuario);
+    } else {
+      // Otherwise, make API call
+      const resposta = await atualizarUsuario(data);
+      if (resposta.usuario) {
+        setUsuario(resposta.usuario);
+      }
+    }
   };
 
   return (
     <AuthContext.Provider
-      value={{ usuario, loading, login, cadastrar, logout }}
+      value={{ usuario, loading, login, cadastrar, logout, updateUser }}
     >
       {children}
     </AuthContext.Provider>
@@ -81,4 +125,3 @@ export function useAuth() {
   }
   return context;
 }
-

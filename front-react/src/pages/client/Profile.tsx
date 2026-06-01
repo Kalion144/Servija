@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -5,34 +6,54 @@ import { atualizarUsuario } from '../../services/api';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { usuario } = useAuth();
+  const { usuario, updateUser } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    nome: usuario?.nome || 'João Silva',
-    email: usuario?.email || 'joao.silva@email.com',
-    telefone: '(61) 99999-9999',
-    cpf: '123.456.789-00',
-    endereco: 'Rua das Flores, 123 - Asa Sul, Brasília/DF',
-    cidade: 'Brasília',
-    estado: 'DF',
-    dataNascimento: '1990-05-15',
-    bio: 'Sou um cliente da Servijá que busca profissionais qualificados para serviços do dia a dia. Valorizo qualidade, pontualidade e bom atendimento.',
+    nome: '',
+    email: '',
+    telefone: '',
+    cpf: '',
+    endereco: '',
+    cidade: '',
+    estado: '',
+    dataNascimento: '',
+    bio: '',
     notificacoes: 'sim',
     idioma: 'pt',
   });
-
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [toast, setToast] = useState({
     show: false,
     message: '',
     isError: false,
   });
-  const toastTimeout = useRef(null);
+  const toastTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Load user data when usuario changes
+  useEffect(() => {
+    if (usuario) {
+      setFormData({
+        nome: usuario.nome || '',
+        email: usuario.email || '',
+        telefone: usuario.telefone || '',
+        cpf: usuario.cpf || '',
+        endereco: usuario.endereco || '',
+        cidade: usuario.cidade || '',
+        estado: usuario.estado || '',
+        dataNascimento: usuario.dataNascimento || '',
+        bio: usuario.bio || '',
+        notificacoes: usuario.notificacoes || 'sim',
+        idioma: usuario.idioma || 'pt',
+      });
+      setAvatar(usuario.foto || null);
+    }
+  }, [usuario]);
 
   const displayName = formData.nome.trim() || 'Usuário';
 
-  const showToast = useCallback((message, isError = false) => {
+  const showToast = useCallback((message: string, isError = false) => {
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
     setToast({ show: true, message, isError });
     toastTimeout.current = setTimeout(() => {
@@ -40,14 +61,18 @@ const Profile = () => {
     }, 3000);
   }, []);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
   const saveProfile = async () => {
     try {
-      await atualizarUsuario(formData);
+      const result = await atualizarUsuario(formData);
+      if (result.usuario) {
+        updateUser(result.usuario);
+      }
+      setIsEditing(false);
       showToast('✅ Perfil atualizado com sucesso!');
     } catch (error) {
       console.error(error);
@@ -56,6 +81,23 @@ const Profile = () => {
   };
 
   const cancelChanges = () => {
+    if (usuario) {
+      setFormData({
+        nome: usuario.nome || '',
+        email: usuario.email || '',
+        telefone: usuario.telefone || '',
+        cpf: usuario.cpf || '',
+        endereco: usuario.endereco || '',
+        cidade: usuario.cidade || '',
+        estado: usuario.estado || '',
+        dataNascimento: usuario.dataNascimento || '',
+        bio: usuario.bio || '',
+        notificacoes: usuario.notificacoes || 'sim',
+        idioma: usuario.idioma || 'pt',
+      });
+      setAvatar(usuario.foto || null);
+    }
+    setIsEditing(false);
     showToast('Alterações descartadas');
   };
 
@@ -64,8 +106,8 @@ const Profile = () => {
     setPhotoModalOpen(true);
   };
   const closePhotoModal = () => setPhotoModalOpen(false);
-  const handlePhotoFileChange = (e) => {
-    if (e.target.files[0]) setSelectedPhoto(e.target.files[0]);
+  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) setSelectedPhoto(e.target.files[0]);
   };
   const saveProfilePhoto = () => {
     if (!selectedPhoto) {
@@ -74,8 +116,9 @@ const Profile = () => {
     }
     const reader = new FileReader();
     reader.onload = (e) => {
-      const imageData = e.target.result;
+      const imageData = e.target?.result as string;
       setAvatar(imageData);
+      setFormData(prev => ({ ...prev, foto: imageData }));
       showToast('✅ Foto de perfil atualizada!');
       closePhotoModal();
     };
@@ -85,11 +128,6 @@ const Profile = () => {
   const handleLogout = () => {
     showToast('👋 Até logo! Fazendo logout...');
     setTimeout(() => navigate('/'), 1500);
-  };
-  const scrollToForm = () => {
-    document
-      .querySelector('.form-section')
-      ?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -114,7 +152,7 @@ body {
   min-height: 100vh;
 }
 .user-header {
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #fff;
   padding: 24px;
   display: flex;
@@ -147,7 +185,7 @@ body {
 }
 .icon-btn:hover {
   background: #fff;
-  color: #f97316;
+  color: #2563eb;
 }
 .profile-card {
   max-width: 950px;
@@ -160,7 +198,7 @@ body {
 .profile-header {
   padding: 35px;
   text-align: center;
-  background: #fff7ed;
+  background: #eff6ff;
   position: relative;
 }
 .edit-profile-link {
@@ -168,15 +206,16 @@ body {
   top: 20px;
   right: 20px;
   border: none;
-  background: #f97316;
+  background: ${isEditing ? '#dc2626' : '#2563eb'};
   color: #fff;
   padding: 10px 16px;
   border-radius: 12px;
   cursor: pointer;
   transition: 0.3s;
+  font-weight: 600;
 }
 .edit-profile-link:hover {
-  background: #ea580c;
+  background: ${isEditing ? '#b91c1c' : '#1d4ed8'};
 }
 .profile-avatar {
   width: 130px;
@@ -185,7 +224,7 @@ body {
   border-radius: 50%;
   overflow: hidden;
   position: relative;
-  background: #f1f5f9;
+  background: #e0e7ff;
   border: 4px solid #fff;
   box-shadow: 0 6px 20px rgba(0,0,0,0.12);
 }
@@ -226,8 +265,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #ffedd5;
-  color: #ea580c;
+  background: #dbeafe;
+  color: #1e40af;
   padding: 10px 16px;
   border-radius: 30px;
   font-size: 14px;
@@ -235,7 +274,7 @@ body {
 }
 .form-section {
   padding: 30px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #e2e8f0;
 }
 .form-section h4 {
   margin-bottom: 24px;
@@ -252,20 +291,22 @@ body {
   display: block;
   margin-bottom: 10px;
   font-weight: 600;
+  color: #334155;
 }
 input, textarea, select {
   width: 100%;
   padding: 14px;
-  border: 1px solid #dbe2ea;
+  border: 1px solid ${isEditing ? '#cbd5e1' : '#e2e8f0'};
   border-radius: 14px;
   font-size: 15px;
-  background: #fff;
+  background: ${isEditing ? '#fff' : '#f8fafc'};
   transition: 0.3s;
+  cursor: ${isEditing ? 'text' : 'default'};
 }
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: #f97316;
-  box-shadow: 0 0 0 4px rgba(249,115,22,0.15);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
 }
 textarea {
   min-height: 130px;
@@ -289,7 +330,7 @@ textarea {
 }
 .btn-cancel, .btn-save {
   border: none;
-  padding: 14px 24px;
+  padding: 14px 28px;
   border-radius: 14px;
   font-size: 15px;
   font-weight: 600;
@@ -304,12 +345,12 @@ textarea {
   background: #cbd5e1;
 }
 .btn-save {
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #fff;
 }
 .btn-save:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(249,115,22,0.25);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
 }
 .bottom-nav {
   position: fixed;
@@ -337,13 +378,13 @@ textarea {
   font-size: 18px;
 }
 .nav-item.active, .nav-item:hover {
-  color: #f97316;
+  color: #2563eb;
 }
 .footer {
   background: #0f172a;
   color: #fff;
   margin-top: 60px;
-  padding: 50px 20px 100px;
+  padding: 50px 20px 120px;
 }
 .footer-content {
   max-width: 1200px;
@@ -381,7 +422,7 @@ textarea {
   transition: 0.3s;
 }
 .social-links a:hover {
-  background: #f97316;
+  background: #2563eb;
 }
 .footer-bottom {
   text-align: center;
@@ -449,7 +490,7 @@ textarea {
     width: 100%;
   }
   .footer {
-    padding-bottom: 120px;
+    padding-bottom: 140px;
   }
 } `;
 
@@ -483,8 +524,11 @@ textarea {
 
         <div className="profile-card">
           <div className="profile-header">
-            <button className="edit-profile-link" onClick={scrollToForm}>
-              <i className="fas fa-pen"></i> Editar perfil
+            <button 
+              className="edit-profile-link" 
+              onClick={() => isEditing ? cancelChanges() : setIsEditing(true)}
+            >
+              <i className="fas fa-pen"></i> {isEditing ? 'Cancelar' : 'Editar perfil'}
             </button>
             <div className="profile-avatar">
               {avatar ? (
@@ -494,9 +538,11 @@ textarea {
                   <i className="fas fa-user-circle"></i>
                 </div>
               )}
-              <div className="avatar-overlay" onClick={openPhotoModal}>
-                <i className="fas fa-camera"></i>
-              </div>
+              {isEditing && (
+                <div className="avatar-overlay" onClick={openPhotoModal}>
+                  <i className="fas fa-camera"></i>
+                </div>
+              )}
             </div>
             <h3>{displayName}</h3>
             <div className="user-type">
@@ -516,6 +562,7 @@ textarea {
                   id="nome"
                   value={formData.nome}
                   onChange={handleChange}
+                  disabled={!isEditing}
                 />
               </div>
               <div className="form-group">
@@ -525,6 +572,7 @@ textarea {
                   id="dataNascimento"
                   value={formData.dataNascimento}
                   onChange={handleChange}
+                  disabled={!isEditing}
                 />
               </div>
             </div>
@@ -535,6 +583,7 @@ textarea {
                 id="email"
                 value={formData.email}
                 onChange={handleChange}
+                disabled={!isEditing}
               />
             </div>
             <div className="double-row">
@@ -545,6 +594,7 @@ textarea {
                   id="telefone"
                   value={formData.telefone}
                   onChange={handleChange}
+                  disabled={!isEditing}
                 />
               </div>
               <div className="form-group">
@@ -554,6 +604,7 @@ textarea {
                   id="cpf"
                   value={formData.cpf}
                   onChange={handleChange}
+                  disabled={!isEditing}
                 />
               </div>
             </div>
@@ -564,6 +615,7 @@ textarea {
                 id="endereco"
                 value={formData.endereco}
                 onChange={handleChange}
+                disabled={!isEditing}
               />
             </div>
             <div className="double-row">
@@ -574,6 +626,7 @@ textarea {
                   id="cidade"
                   value={formData.cidade}
                   onChange={handleChange}
+                  disabled={!isEditing}
                 />
               </div>
               <div className="form-group">
@@ -582,7 +635,9 @@ textarea {
                   id="estado"
                   value={formData.estado}
                   onChange={handleChange}
+                  disabled={!isEditing}
                 >
+                  <option value="">Selecione</option>
                   <option value="DF">DF</option>
                   <option value="SP">SP</option>
                   <option value="RJ">RJ</option>
@@ -603,7 +658,12 @@ textarea {
             </h4>
             <div className="form-group">
               <label>Biografia</label>
-              <textarea id="bio" value={formData.bio} onChange={handleChange} />
+              <textarea 
+                id="bio" 
+                value={formData.bio} 
+                onChange={handleChange}
+                disabled={!isEditing}
+              />
               <div className="hint-text">
                 Compartilhe suas preferências e o que você valoriza em um
                 profissional
@@ -622,6 +682,7 @@ textarea {
                   id="notificacoes"
                   value={formData.notificacoes}
                   onChange={handleChange}
+                  disabled={!isEditing}
                 >
                   <option value="sim">Sim, quero receber</option>
                   <option value="nao">Não, não quero receber</option>
@@ -633,6 +694,7 @@ textarea {
                   id="idioma"
                   value={formData.idioma}
                   onChange={handleChange}
+                  disabled={!isEditing}
                 >
                   <option value="pt">Português</option>
                   <option value="en">English</option>
@@ -642,14 +704,16 @@ textarea {
             </div>
           </div>
 
-          <div className="action-buttons">
-            <button className="btn-cancel" onClick={cancelChanges}>
-              Cancelar
-            </button>
-            <button className="btn-save" onClick={saveProfile}>
-              Salvar alterações
-            </button>
-          </div>
+          {isEditing && (
+            <div className="action-buttons">
+              <button className="btn-cancel" onClick={cancelChanges}>
+                Cancelar
+              </button>
+              <button className="btn-save" onClick={saveProfile}>
+                Salvar alterações
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="footer"></div>
@@ -683,7 +747,7 @@ textarea {
         {toast.show && (
           <div
             className="success-toast"
-            style={{ background: toast.isError ? '#dc2626' : '#f97316' }}
+            style={{ background: toast.isError ? '#dc2626' : '#2563eb' }}
           >
             <i
               className={`fas ${toast.isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}`}
