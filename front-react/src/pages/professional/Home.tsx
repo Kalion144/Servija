@@ -46,7 +46,7 @@ const Home = () => {
   };
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const styles = `
@@ -136,23 +136,24 @@ const Home = () => {
         </div>
         <div className="services-grid">
           {servicosDisponiveis.map((servico) => (
-                <div
-                  key={servico.id}
-                  className="service-card"
-                  onClick={() => handleCardClick(servico)}
-                >
-                  <div className="card-header">
-                    <span className="prof-name">{servico.cliente_nome}</span>
-                    <span className="rating">⭐ Novo</span>
-                  </div>
-                  <div className="service-name">{servico.titulo}</div>
-                  <div className="service-footer">
-                    <div className="distance-price">
-                      📍 {servico.prazo || '—'} • {servico.valor ? `R$${servico.valor.toFixed(2)}` : '—'}
-                    </div>
-                  </div>
+            <div
+              key={servico.id}
+              className="service-card"
+              onClick={() => handleCardClick(servico)}
+            >
+              <div className="card-header">
+                <span className="prof-name">{servico.cliente_nome}</span>
+                <span className="rating">⭐ Novo</span>
+              </div>
+              <div className="service-name">{servico.titulo}</div>
+              <div className="service-footer">
+                <div className="distance-price">
+                  📍 {servico.prazo || '—'} •{' '}
+                  {servico.valor ? `R$${servico.valor.toFixed(2)}` : '—'}
                 </div>
-              ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       {toastVisible && <div className="success-toast">{toastMessage}</div>}

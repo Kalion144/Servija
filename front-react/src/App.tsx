@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Index from './pages/Index';
 import Sobre from './pages/Sobre';
+import NotFound from './pages/NotFound';
 import ClientHome from './pages/client/Home';
 import ClientServices from './pages/client/Services';
 import ClientProposals from './pages/client/Proposals';
@@ -27,35 +28,53 @@ function App() {
         {/* Rotas do Cliente */}
         <Route path="/client/login" element={<LoginClient />} />
         <Route path="/client/cadastro" element={<CadastroClient />} />
-        <Route path="/client/home" element={
-          <ProtectedRoute allowedType="CLIENTE">
-            <ClientHome />
-          </ProtectedRoute>
-        } />
-        <Route path="/client/services" element={
-          <ProtectedRoute allowedType="CLIENTE">
-            <ClientServices />
-          </ProtectedRoute>
-        } />
-        <Route path="/client/proposals" element={
-          <ProtectedRoute allowedType="CLIENTE">
-            <ClientProposals />
-          </ProtectedRoute>
-        } />
-        <Route path="/client/profile" element={
-          <ProtectedRoute allowedType="CLIENTE">
-            <ClientProfile />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/client/home"
+          element={
+            <ProtectedRoute allowedType="CLIENTE">
+              <ClientHome />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/client/services"
+          element={
+            <ProtectedRoute allowedType="CLIENTE">
+              <ClientServices />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/client/proposals"
+          element={
+            <ProtectedRoute allowedType="CLIENTE">
+              <ClientProposals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/client/profile"
+          element={
+            <ProtectedRoute allowedType="CLIENTE">
+              <ClientProfile />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Rotas do Profissional */}
         <Route path="/professional/login" element={<LoginProfessional />} />
-        <Route path="/professional/cadastro" element={<CadastroProfessional />} />
-        <Route path="/professional/home" element={
-          <ProtectedRoute allowedType="PROFISSIONAL">
-            <ProfessionalHome />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/professional/cadastro"
+          element={<CadastroProfessional />}
+        />
+        <Route
+          path="/professional/home"
+          element={
+            <ProtectedRoute allowedType="PROFISSIONAL">
+              <ProfessionalHome />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/professional/proposals"
           element={
@@ -80,11 +99,17 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/professional/profile" element={
-          <ProtectedRoute allowedType="PROFISSIONAL">
-            <ProfessionalProfile />
-          </ProtectedRoute>
-        } />
+        <Route
+          path="/professional/profile"
+          element={
+            <ProtectedRoute allowedType="PROFISSIONAL">
+              <ProfessionalProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Rota de 404 (Página não encontrada) */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>
   );

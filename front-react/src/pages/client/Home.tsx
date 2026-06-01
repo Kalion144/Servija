@@ -141,13 +141,13 @@ const Home = () => {
             >
               <i className="fas fa-bell"></i>
             </button>
-            <button
+            {/* <button
               className="icon-btn"
               onClick={() => navigate('/client/post-service')}
               title="Publicar Serviço"
             >
               <i className="fas fa-plus-circle"></i>
-            </button>
+            </button> */}
             <button
               className="icon-btn"
               onClick={() => navigate('/client/services')}
@@ -171,7 +171,10 @@ const Home = () => {
             </button>
             <button
               className="icon-btn"
-              onClick={async () => { await logout(); navigate('/login'); }}
+              onClick={async () => {
+                await logout();
+                navigate('/login');
+              }}
               title="Sair"
             >
               <i className="fas fa-sign-out-alt"></i>
