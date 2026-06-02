@@ -40,7 +40,10 @@ export default function SendProposal() {
       setTimeout(() => navigate('/professional/proposals'), 1800);
     } catch (error) {
       console.error(error);
-      const mensagem = error instanceof Error ? error.message : 'Erro ao enviar proposta, tente novamente!';
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : 'Erro ao enviar proposta, tente novamente!';
       setToast({
         message: mensagem,
         isError: true,

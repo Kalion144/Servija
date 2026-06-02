@@ -33,7 +33,8 @@ const Proposals: React.FC = () => {
       setPropostas(dados.propostas || []);
     } catch (error) {
       console.error(error);
-      const mensagem = error instanceof Error ? error.message : 'Erro ao carregar propostas!';
+      const mensagem =
+        error instanceof Error ? error.message : 'Erro ao carregar propostas!';
       setToastMessage(mensagem);
       setToastType('error');
     } finally {
@@ -49,7 +50,10 @@ const Proposals: React.FC = () => {
       await loadPropostas();
     } catch (error) {
       console.error(error);
-      const mensagem = error instanceof Error ? error.message : 'Erro ao marcar serviço como concluído!';
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : 'Erro ao marcar serviço como concluído!';
       setToastMessage(mensagem);
       setToastType('error');
     }

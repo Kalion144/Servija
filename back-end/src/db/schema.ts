@@ -150,13 +150,6 @@ export const professionalServicesRelations = relations(
   }),
 );
 
-export const proposalsRelations = relations(proposals, ({ one, many }) => ({
-  client: one(users, {
-    fields: [proposals.client_id],
-    references: [users.id],
-  }),
-}));
-
 export const proposalProfessionalsRelations = relations(
   proposalProfessionals,
   ({ one, many }) => ({
