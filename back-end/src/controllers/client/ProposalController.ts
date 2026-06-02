@@ -85,7 +85,7 @@ export class ProposalClientController {
       await db
         .update(professionalServices)
         .set({ status: "EM_ANDAMENTO" })
-        .where(eq(professionalServices.id, pp.professionalServices.id));
+        .where(eq(professionalServices.id, pp.professional_services.id));
 
       console.log("✅ Proposta aceita com sucesso");
       res.json({ mensagem: "Proposta aceita com sucesso" });

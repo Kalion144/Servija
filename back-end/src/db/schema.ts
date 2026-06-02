@@ -70,37 +70,6 @@ export const professionalServices = sqliteTable("professional_services", {
     .$defaultFn(() => new Date()),
 });
 
-export const proposals = sqliteTable("proposals", {
-  id: int("id").primaryKey({ autoIncrement: true }),
-  client_id: int("client_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  titulo: text("titulo").notNull(),
-  descricao: text("descricao"),
-  categoria: text("categoria"),
-  valor: real("valor"),
-  prazo: text("prazo"),
-  urgente: int("urgente").default(0),
-  contato: text("contato"),
-  localizacao: text("localizacao"),
-  fotos: text("fotos"), // array de URLs em JSON
-  status: text("status")
-    .notNull()
-    .$type<
-      | "PENDENTE"
-      | "ACEITA"
-      | "RECUSADA"
-      | "CANCELADA"
-      | "EM_ANDAMENTO"
-      | "FINALIZADA"
-      | "AVALIADA"
-    >()
-    .default("PENDENTE"),
-  created_at: int("created_at", { mode: "timestamp_ms" })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
-
 export const proposalProfessionals = sqliteTable("proposal_professionals", {
   id: int("id").primaryKey({ autoIncrement: true }),
   service_id: int("service_id")

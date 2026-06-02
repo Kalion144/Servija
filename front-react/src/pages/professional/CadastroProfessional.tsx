@@ -172,6 +172,19 @@ export default function CadastroProfessional() {
         <hr />
 
         <small className="note">* campos obrigatórios</small>
+
+        <div className="register-link" style={{ marginTop: '1rem' }}>
+          É cliente?{' '}
+          <a
+            href="/client/cadastro"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/client/cadastro');
+            }}
+          >
+            Criar conta de cliente
+          </a>
+        </div>
       </div>
 
       {toast && (

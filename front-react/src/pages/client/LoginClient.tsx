@@ -135,6 +135,18 @@ export default function LoginClient() {
             Criar conta
           </a>
         </div>
+        <div className="register-link">
+          É profissional?{' '}
+          <a
+            href="/professional/login"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/professional/login');
+            }}
+          >
+            Acessar área do profissional
+          </a>
+        </div>
       </div>
       {toast && (
         <div

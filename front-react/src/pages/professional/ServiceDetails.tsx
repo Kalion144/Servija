@@ -429,7 +429,10 @@ const ServiceDetails = () => {
           <div className="image-column">
             {servico.fotos && servico.fotos.length > 0 ? (
               <div className="service-image">
-                <img src={servico.fotos[0]} alt={servico.titulo} />
+                <img
+                  src={`http://localhost:3000${servico.fotos[0]}`}
+                  alt={servico.titulo}
+                />
               </div>
             ) : (
               <div className="service-image-placeholder">

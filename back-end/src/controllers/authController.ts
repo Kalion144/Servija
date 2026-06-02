@@ -5,29 +5,28 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-if (!JWT_SECRET) throw new Error("JWT_SECRET não definido no .env");
+const JWT_SECRET = process.env.JWT_SECRET || "seu-segredo-jwt";
 
 export class AuthController {
   static async register(req: Request, res: Response) {
     const { nome, email, senha, tipo, foto } = req.body;
 
     try {
-      console.log("🔍 Verificando se usuário já existe...");
+      console.log("🔍 [register] Verificando se usuário já existe com email:", email);
       const existingUser = await db
         .select()
         .from(users)
         .where(eq(users.email, email));
 
       if (existingUser.length > 0) {
-        console.log("❌ Email já cadastrado");
+        console.log("❌ [register] Email já cadastrado");
         return res.status(400).json({ erro: "Email já cadastrado" });
       }
 
-      console.log("🔐 Gerando hash da senha...");
+      console.log("🔐 [register] Gerando hash da senha...");
       const senha_hash = await bcrypt.hash(senha, 10);
 
-      console.log("💾 Inserindo usuário no banco...");
+      console.log("💾 [register] Inserindo usuário no banco...");
       const result = await db
         .insert(users)
         .values({
@@ -45,7 +44,7 @@ export class AuthController {
         throw new Error("Falha ao criar usuário");
       }
 
-      console.log("🔑 Gerando token JWT...");
+      console.log("🔑 [register] Gerando token JWT...");
       const token = jwt.sign(
         { userId: newUser.id, userType: tipo },
         JWT_SECRET,
@@ -62,10 +61,7 @@ export class AuthController {
         usuario: userData,
       };
 
-      console.log(
-        "✅ Resposta de registro:",
-        JSON.stringify(response, null, 2),
-      );
+      console.log("✅ [register] Resposta de registro:", JSON.stringify(response, null, 2));
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -74,47 +70,45 @@ export class AuthController {
       });
       res.status(201).json(response);
     } catch (error) {
-      console.error("❌ Erro no registro:", error);
-      res.status(500).json({ erro: "Erro interno do servidor" });
+      console.error("❌ [register] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
   static async login(req: Request, res: Response) {
     const { email, senha } = req.body;
 
-    console.log(
-      "📥 Recebendo solicitação de login genérico - Dados recebidos:",
-      { email: email ? "enviado" : "não enviado" },
-    );
+    console.log("📥 [login] Recebendo solicitação de login - Dados recebidos:", { email: email ? "enviado" : "não enviado" });
 
     try {
-      console.log("🔍 Buscando usuário no banco com email:", email);
+      console.log("🔍 [login] Buscando usuário no banco com email:", email);
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.email, email));
 
       if (!user) {
-        console.log("❌ Login falhou: Email não encontrado no banco de dados");
+        console.log("❌ [login] Login falhou: Email não encontrado no banco de dados");
         return res.status(401).json({ erro: "Email não encontrado" });
       }
 
-      console.log("✅ Usuário encontrado no banco:", {
-        id: user.id,
-        nome: user.nome,
-        tipo: user.tipo,
-      });
+      console.log("✅ [login] Usuário encontrado no banco:", { id: user.id, nome: user.nome, tipo: user.tipo });
 
-      console.log("🔐 Verificando senha...");
+      console.log("🔐 [login] Verificando senha...");
       const senhaValida = await bcrypt.compare(senha, user.senha_hash);
 
       if (!senhaValida) {
-        console.log("❌ Login falhou: Senha incorreta");
+        console.log("❌ [login] Login falhou: Senha incorreta");
         return res.status(401).json({ erro: "Senha incorreta" });
       }
 
-      console.log("✅ Senha correta!");
-      console.log("🔑 Gerando token JWT...");
+      console.log("✅ [login] Senha correta!");
+      console.log("🔑 [login] Gerando token JWT...");
       const token = jwt.sign(
         { userId: user.id, userType: user.tipo },
         JWT_SECRET,
@@ -137,10 +131,7 @@ export class AuthController {
         },
       };
 
-      console.log(
-        "✅ Login bem-sucedido! Resposta:",
-        JSON.stringify(response, null, 2),
-      );
+      console.log("✅ [login] Login bem-sucedido!");
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -149,14 +140,13 @@ export class AuthController {
       });
       res.json(response);
     } catch (error) {
-      console.error("❌ Erro CRÍTICO no login genérico:", error);
-      if (error instanceof Error) {
-        console.error("❌ Stack trace:", error.stack);
-      }
-      res.status(500).json({
-        erro: "Erro interno do servidor",
-        detalhes: error instanceof Error ? error.message : String(error),
+      console.error("❌ [login] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
       });
+      const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
@@ -164,13 +154,17 @@ export class AuthController {
     try {
       const userId = req.user?.userId;
 
-      if (!userId) {
+      if (!userId || !Number.isFinite(userId)) {
+        console.warn("⚠️ [me] Usuário não autenticado ou userId inválido");
         return res.status(401).json({ erro: "Usuário não autenticado" });
       }
+
+      console.log("🔍 [me] Buscando usuário com ID:", userId);
 
       const [user] = await db.select().from(users).where(eq(users.id, userId));
 
       if (!user) {
+        console.warn("⚠️ [me] Usuário não encontrado");
         return res.status(404).json({ erro: "Usuário não encontrado" });
       }
 
@@ -182,6 +176,8 @@ export class AuthController {
               .where(eq(professionalProfiles.user_id, user.id))
           : [null];
 
+      console.log("✅ [me] Usuário encontrado:", { id: user.id, nome: user.nome });
+
       res.json({
         usuario: {
           ...user,
@@ -189,8 +185,13 @@ export class AuthController {
         },
       });
     } catch (error) {
-      console.error("❌ Erro ao obter dados do usuário:", error);
-      res.status(500).json({ erro: "Erro interno do servidor" });
+      console.error("❌ [me] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
@@ -210,7 +211,8 @@ export class AuthController {
     } = req.body;
 
     try {
-      if (!userId) {
+      if (!userId || !Number.isFinite(userId)) {
+        console.warn("⚠️ [updateUser] Usuário não autenticado ou userId inválido");
         return res.status(401).json({ erro: "Usuário não autenticado" });
       }
 
@@ -226,6 +228,8 @@ export class AuthController {
       if (dataNascimento) updateData.dataNascimento = dataNascimento;
       if (bio) updateData.bio = bio;
 
+      console.log("🔍 [updateUser] Atualizando usuário com ID:", userId, "dados:", updateData);
+
       await db.update(users).set(updateData).where(eq(users.id, userId));
 
       const [updatedUser] = await db
@@ -237,17 +241,24 @@ export class AuthController {
         throw new Error("Usuário não encontrado");
       }
 
+      console.log("✅ [updateUser] Usuário atualizado com sucesso");
       res.json({
         mensagem: "Usuário atualizado com sucesso",
         usuario: updatedUser,
       });
     } catch (error) {
-      console.error("❌ Erro ao atualizar usuário:", error);
-      res.status(500).json({ erro: "Erro interno do servidor" });
+      console.error("❌ [updateUser] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
   static async logout(req: Request, res: Response) {
+    console.log("📤 [logout] Realizando logout...");
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

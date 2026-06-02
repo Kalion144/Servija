@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { atualizarUsuario } from '../../services/api';
+import { atualizarUsuario, uploadSingleImage } from '../../services/api';
+
+const API_URL = 'http://localhost:3000';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -46,7 +48,13 @@ const Profile = () => {
         notificacoes: usuario.notificacoes || 'sim',
         idioma: usuario.idioma || 'pt',
       });
-      setAvatar(usuario.foto || null);
+
+      // Se a foto começar com /uploads/, adicionar o base URL
+      let avatar = usuario.foto || null;
+      if (avatar && avatar.startsWith('/uploads/')) {
+        avatar = `${API_URL}${avatar}`;
+      }
+      setAvatar(avatar);
     }
   }, [usuario]);
 
@@ -71,7 +79,15 @@ const Profile = () => {
 
   const saveProfile = async () => {
     try {
-      const result = await atualizarUsuario(formData);
+      // Strip API_URL from foto if present
+      let fotoToSave = formData.foto;
+      if (fotoToSave && fotoToSave.startsWith(API_URL)) {
+        fotoToSave = fotoToSave.substring(API_URL.length);
+      }
+
+      const dataToSend = { ...formData, foto: fotoToSave };
+      const result = await atualizarUsuario(dataToSend);
+
       if (result.usuario) {
         updateUser(result.usuario);
       }
@@ -98,7 +114,13 @@ const Profile = () => {
         notificacoes: usuario.notificacoes || 'sim',
         idioma: usuario.idioma || 'pt',
       });
-      setAvatar(usuario.foto || null);
+
+      // Se a foto começar com /uploads/, adicionar o base URL
+      let avatar = usuario.foto || null;
+      if (avatar && avatar.startsWith('/uploads/')) {
+        avatar = `${API_URL}${avatar}`;
+      }
+      setAvatar(avatar);
     }
     setIsEditing(false);
     showToast('Alterações descartadas');
@@ -113,20 +135,25 @@ const Profile = () => {
     if (e.target.files && e.target.files[0])
       setSelectedPhoto(e.target.files[0]);
   };
-  const saveProfilePhoto = () => {
+  const saveProfilePhoto = async () => {
     if (!selectedPhoto) {
       showToast('Selecione uma foto primeiro', true);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const imageData = e.target?.result as string;
-      setAvatar(imageData);
-      setFormData((prev) => ({ ...prev, foto: imageData }));
+
+    try {
+      const result = await uploadSingleImage(selectedPhoto);
+      const fullImageUrl = `${API_URL}${result.url}`;
+      setAvatar(fullImageUrl);
+      setFormData((prev) => ({ ...prev, foto: fullImageUrl }));
       showToast('✅ Foto de perfil atualizada!');
       closePhotoModal();
-    };
-    reader.readAsDataURL(selectedPhoto);
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error ? error.message : 'Erro ao fazer upload';
+      showToast(message, true);
+    }
   };
 
   const handleLogout = () => {

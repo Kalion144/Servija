@@ -5,29 +5,33 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
-if (!JWT_SECRET) throw new Error("JWT_SECRET não definido no .env");
+const JWT_SECRET = process.env.JWT_SECRET || "seu-segredo-jwt";
 
 export class ProfessionalAuthController {
   static async register(req: Request, res: Response) {
     const { nome, email, senha, foto } = req.body;
 
     try {
-      console.log("🔍 Verificando se usuário já existe...");
+      console.log(
+        "🔍 [ProfessionalAuth register] Verificando se usuário já existe com email:",
+        email,
+      );
       const existingUser = await db
         .select()
         .from(users)
         .where(eq(users.email, email));
 
       if (existingUser.length > 0) {
-        console.log("❌ Email já cadastrado");
+        console.log("❌ [ProfessionalAuth register] Email já cadastrado");
         return res.status(400).json({ erro: "Email já cadastrado" });
       }
 
-      console.log("🔐 Gerando hash da senha...");
+      console.log("🔐 [ProfessionalAuth register] Gerando hash da senha...");
       const senha_hash = await bcrypt.hash(senha, 10);
 
-      console.log("💾 Inserindo usuário no banco...");
+      console.log(
+        "💾 [ProfessionalAuth register] Inserindo usuário no banco...",
+      );
       const result = await db
         .insert(users)
         .values({
@@ -45,7 +49,7 @@ export class ProfessionalAuthController {
         throw new Error("Falha ao criar usuário");
       }
 
-      console.log("🔑 Gerando token JWT...");
+      console.log("🔑 [ProfessionalAuth register] Gerando token JWT...");
       const token = jwt.sign(
         { userId: newUser.id, userType: "PROFISSIONAL" },
         JWT_SECRET,
@@ -63,7 +67,7 @@ export class ProfessionalAuthController {
       };
 
       console.log(
-        "✅ Resposta de registro:",
+        "✅ [ProfessionalAuth register] Resposta de registro:",
         JSON.stringify(response, null, 2),
       );
       res.cookie("token", token, {
@@ -74,45 +78,69 @@ export class ProfessionalAuthController {
       });
       res.status(201).json(response);
     } catch (error) {
-      console.error("❌ Erro no registro:", error);
-      res.status(500).json({ erro: "Erro interno do servidor" });
+      console.error("❌ [ProfessionalAuth register] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro =
+        error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
   static async login(req: Request, res: Response) {
     const { email, senha } = req.body;
 
-    console.log("📥 Recebendo solicitação de login profissional - Dados recebidos:", { email: email ? 'enviado' : 'não enviado' });
+    console.log(
+      "📥 [ProfessionalAuth login] Recebendo solicitação de login profissional - Dados recebidos:",
+      { email: email ? "enviado" : "não enviado" },
+    );
 
     try {
-      console.log("🔍 Buscando profissional no banco com email:", email);
+      console.log(
+        "🔍 [ProfessionalAuth login] Buscando profissional no banco com email:",
+        email,
+      );
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.email, email));
 
       if (!user) {
-        console.log("❌ Login falhou: Email não encontrado no banco de dados");
+        console.log(
+          "❌ [ProfessionalAuth login] Login falhou: Email não encontrado no banco de dados",
+        );
         return res.status(401).json({ erro: "Email não encontrado" });
       }
 
-      console.log("✅ Usuário encontrado no banco:", { id: user.id, nome: user.nome, tipo: user.tipo });
+      console.log("✅ [ProfessionalAuth login] Usuário encontrado no banco:", {
+        id: user.id,
+        nome: user.nome,
+        tipo: user.tipo,
+      });
 
       if (user.tipo !== "PROFISSIONAL") {
-        console.log("❌ Login falhou: Tipo de usuário não é profissional");
-        return res.status(401).json({ erro: "Acesso negado. Esta área é para profissionais." });
+        console.log(
+          "❌ [ProfessionalAuth login] Login falhou: Tipo de usuário não é profissional",
+        );
+        return res
+          .status(401)
+          .json({ erro: "Acesso negado. Esta área é para profissionais." });
       }
 
-      console.log("🔐 Verificando senha...");
+      console.log("🔐 [ProfessionalAuth login] Verificando senha...");
       const senhaValida = await bcrypt.compare(senha, user.senha_hash);
 
       if (!senhaValida) {
-        console.log("❌ Login falhou: Senha incorreta");
+        console.log(
+          "❌ [ProfessionalAuth login] Login falhou: Senha incorreta",
+        );
         return res.status(401).json({ erro: "Senha incorreta" });
       }
 
-      console.log("✅ Senha correta!");
-      console.log("🔑 Gerando token JWT...");
+      console.log("✅ [ProfessionalAuth login] Senha correta!");
+      console.log("🔑 [ProfessionalAuth login] Gerando token JWT...");
       const token = jwt.sign(
         { userId: user.id, userType: user.tipo },
         JWT_SECRET,
@@ -132,7 +160,7 @@ export class ProfessionalAuthController {
         },
       };
 
-      console.log("✅ Login bem-sucedido! Resposta:", JSON.stringify(response, null, 2));
+      console.log("✅ [ProfessionalAuth login] Login bem-sucedido!");
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -141,14 +169,14 @@ export class ProfessionalAuthController {
       });
       res.json(response);
     } catch (error) {
-      console.error("❌ Erro CRÍTICO no login profissional:", error);
-      if (error instanceof Error) {
-        console.error("❌ Stack trace:", error.stack);
-      }
-      res.status(500).json({
-        erro: "Erro interno do servidor",
-        detalhes: error instanceof Error ? error.message : String(error),
+      console.error("❌ [ProfessionalAuth login] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
       });
+      const mensagemErro =
+        error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
@@ -156,13 +184,22 @@ export class ProfessionalAuthController {
     try {
       const userId = req.user?.userId;
 
-      if (!userId) {
+      if (!userId || !Number.isFinite(userId)) {
+        console.warn(
+          "⚠️ [ProfessionalAuth me] Usuário não autenticado ou userId inválido",
+        );
         return res.status(401).json({ erro: "Usuário não autenticado" });
       }
+
+      console.log(
+        "🔍 [ProfessionalAuth me] Buscando profissional com ID:",
+        userId,
+      );
 
       const [user] = await db.select().from(users).where(eq(users.id, userId));
 
       if (!user || user.tipo !== "PROFISSIONAL") {
+        console.warn("⚠️ [ProfessionalAuth me] Profissional não encontrado");
         return res.status(404).json({ erro: "Profissional não encontrado" });
       }
 
@@ -171,6 +208,11 @@ export class ProfessionalAuthController {
         .from(professionalProfiles)
         .where(eq(professionalProfiles.user_id, user.id));
 
+      console.log("✅ [ProfessionalAuth me] Profissional encontrado:", {
+        id: user.id,
+        nome: user.nome,
+      });
+
       res.json({
         usuario: {
           ...user,
@@ -178,8 +220,14 @@ export class ProfessionalAuthController {
         },
       });
     } catch (error) {
-      console.error("❌ Erro ao obter dados do profissional:", error);
-      res.status(500).json({ erro: "Erro interno do servidor" });
+      console.error("❌ [ProfessionalAuth me] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro =
+        error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
@@ -199,7 +247,10 @@ export class ProfessionalAuthController {
     } = req.body;
 
     try {
-      if (!userId) {
+      if (!userId || !Number.isFinite(userId)) {
+        console.warn(
+          "⚠️ [ProfessionalAuth updateUser] Usuário não autenticado ou userId inválido",
+        );
         return res.status(401).json({ erro: "Usuário não autenticado" });
       }
 
@@ -209,6 +260,9 @@ export class ProfessionalAuthController {
         .where(eq(users.id, userId));
 
       if (!userCheck || userCheck.tipo !== "PROFISSIONAL") {
+        console.warn(
+          "⚠️ [ProfessionalAuth updateUser] Profissional não encontrado",
+        );
         return res.status(404).json({ erro: "Profissional não encontrado" });
       }
 
@@ -224,6 +278,13 @@ export class ProfessionalAuthController {
       if (dataNascimento) updateData.dataNascimento = dataNascimento;
       if (bio) updateData.bio = bio;
 
+      console.log(
+        "🔍 [ProfessionalAuth updateUser] Atualizando profissional com ID:",
+        userId,
+        "dados:",
+        updateData,
+      );
+
       await db.update(users).set(updateData).where(eq(users.id, userId));
 
       const [updatedUser] = await db
@@ -232,7 +293,7 @@ export class ProfessionalAuthController {
         .where(eq(users.id, userId));
 
       if (!updatedUser) {
-        throw new Error("Usuário não encontrado");
+        throw new Error("Profissional não encontrado");
       }
 
       const [profile] = await db
@@ -240,6 +301,9 @@ export class ProfessionalAuthController {
         .from(professionalProfiles)
         .where(eq(professionalProfiles.user_id, updatedUser.id));
 
+      console.log(
+        "✅ [ProfessionalAuth updateUser] Profissional atualizado com sucesso",
+      );
       res.json({
         mensagem: "Profissional atualizado com sucesso",
         usuario: {
@@ -248,12 +312,19 @@ export class ProfessionalAuthController {
         },
       });
     } catch (error) {
-      console.error("❌ Erro ao atualizar profissional:", error);
-      res.status(500).json({ erro: "Erro interno do servidor" });
+      console.error("❌ [ProfessionalAuth updateUser] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro =
+        error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
   static async logout(req: Request, res: Response) {
+    console.log("📤 [ProfessionalAuth logout] Realizando logout...");
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

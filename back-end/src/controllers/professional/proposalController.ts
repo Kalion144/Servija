@@ -290,7 +290,12 @@ export class ProposalController {
 
   static async marcarConcluido(req: Request, res: Response) {
     const user = req.user!;
-    const { id } = req.params;
+    const { proposalProfessionalId } = req.params;
+    if (!proposalProfessionalId) {
+      console.log(
+        "🔍 [marcarConcluido] ID da proposta profissional não fornecido",
+      );
+    }
 
     // Validate user and userId
     if (!user || !Number.isFinite(user.userId)) {
@@ -300,7 +305,10 @@ export class ProposalController {
       return res.status(401).json({ erro: "Usuário não autenticado" });
     }
 
-    console.log("🔍 [marcarConcluido] Dados recebidos:", { id, user });
+    console.log("🔍 [marcarConcluido] Dados recebidos:", {
+      proposalProfessionalId,
+      user,
+    });
 
     if (user.userType !== "PROFISSIONAL") {
       console.warn(
@@ -311,14 +319,14 @@ export class ProposalController {
       });
     }
 
-    if (!id) {
+    if (!proposalProfessionalId) {
       console.warn("⚠️ [marcarConcluido] ID da proposta não fornecido");
       return res.status(400).json({ erro: "ID da proposta é obrigatório" });
     }
 
     console.log(
       "🏁 [marcarConcluido] Iniciando processo para marcar como concluído, proposal ID:",
-      id,
+      proposalProfessionalId,
     );
 
     try {
@@ -330,7 +338,7 @@ export class ProposalController {
         .from(proposalProfessionals)
         .where(
           and(
-            eq(proposalProfessionals.id, Number(id)),
+            eq(proposalProfessionals.id, Number(proposalProfessionalId)),
             eq(proposalProfessionals.professional_id, user.userId),
           ),
         );
@@ -348,7 +356,7 @@ export class ProposalController {
       await db
         .update(proposalProfessionals)
         .set({ status: "FINALIZADA" })
-        .where(eq(proposalProfessionals.id, Number(id)));
+        .where(eq(proposalProfessionals.id, Number(proposalProfessionalId)));
 
       console.log(
         "🔍 [marcarConcluido] Atualizando serviço para FINALIZADA...",
