@@ -10,6 +10,7 @@ const Home = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
   const [location, setLocation] = useState('Brasília - DF');
+  const [planosAbertos, setPlanosAbertos] = useState(false);
   const toastTimeoutRef = useRef(null);
 
   const showToastMessage = (message) => {
@@ -51,11 +52,19 @@ const Home = () => {
     navigate('/');
   };
 
-  const handleAnnouncementClick = (title) => {
+  const handleAnnouncementClick = (title: string) => {
     showToastMessage(`✅ ${title} em desenvolvimento!`);
   };
 
-  // Fake announcements for professionals
+  const handleAssinarPlano = (e: React.MouseEvent, nome: string, preco: number) => {
+    e.stopPropagation();
+    if (preco === 0) {
+      showToastMessage('Você já está no plano Free!');
+    } else {
+      showToastMessage(`✅ Assinatura do plano ${nome} em desenvolvimento!`);
+    }
+  };
+
   const announcements = [
     {
       id: 1,
@@ -64,6 +73,7 @@ const Home = () => {
       subText: 'Primeiro mês gratuito',
       gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
       icon: 'fa-gem',
+      isPremiumCard: true,
     },
     {
       id: 2,
@@ -80,6 +90,37 @@ const Home = () => {
       subText: 'Novidade exclusiva',
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       icon: 'fa-comments',
+    },
+  ];
+
+  const planos = [
+    {
+      id: 1,
+      nome: 'Free',
+      preco: 0,
+      precoLabel: 'Grátis',
+      icone: 'fa-user',
+      variante: 'inner-free',
+      beneficios: ['3 clientes por dia', 'Perfil público'],
+    },
+    {
+      id: 2,
+      nome: 'Pro',
+      preco: 59.99,
+      precoLabel: 'R$ 59,99',
+      icone: 'fa-briefcase',
+      variante: 'inner-pro',
+      beneficios: ['10 clientes/dia', 'Chat em tempo real', 'Impulso de ranking', 'Verificado'],
+    },
+    {
+      id: 3,
+      nome: 'Premium',
+      preco: 129.99,
+      precoLabel: 'R$ 129,99',
+      icone: 'fa-gem',
+      variante: 'inner-premium',
+      popular: true,
+      beneficios: ['Clientes ilimitados', 'Tudo do Pro', 'Clientes premium'],
     },
   ];
 
@@ -121,14 +162,44 @@ const Home = () => {
     .announcement-card h4 { margin-bottom: 10px; font-size: 18px; display: flex; align-items: center; gap: 10px; }
     .announcement-card p { margin-bottom: 6px; font-size: 14px; opacity: 0.95; }
     .announcement-subtext { font-size: 12px; opacity: 0.85; font-style: italic; }
+    .premium-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .premium-card-header h4 { margin-bottom: 0; }
+    .premium-toggle-icon { font-size: 13px; opacity: 0.85; margin-top: 2px; transition: transform 0.3s; }
+    .premium-toggle-icon.open { transform: rotate(180deg); }
+    .premium-collapsed-info { margin-top: 10px; }
+    .plans-expanded { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; animation: slideDown 0.25s ease; }
+    @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .inner-plan { border-radius: 14px; padding: 14px 16px; position: relative; }
+    .inner-plan.inner-free { background: rgba(255,255,255,0.95); color: #1f2937; }
+    .inner-plan.inner-pro { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); }
+    .inner-plan.inner-premium { background: rgba(124,58,237,0.75); border: 1px solid rgba(255,255,255,0.3); }
+    .inner-plan-badge { position: absolute; top: -9px; right: 12px; background: #fbbf24; color: #78350f; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 40px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .inner-plan-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .inner-plan-nome { font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+    .inner-plan.inner-free .inner-plan-nome { color: #1f2937; }
+    .inner-plan-preco { font-size: 0.95rem; font-weight: 800; }
+    .inner-plan-preco-sub { font-size: 0.68rem; opacity: 0.75; }
+    .inner-plan-beneficios { list-style: none; padding: 0; margin: 0 0 10px; font-size: 0.78rem; display: flex; flex-direction: column; gap: 4px; }
+    .inner-plan-beneficios li { display: flex; align-items: center; gap: 6px; }
+    .inner-plan.inner-free .inner-plan-beneficios li { color: #374151; }
+    .inner-plan.inner-free .inner-plan-beneficios li i { color: #f97316; font-size: 0.7rem; }
+    .inner-plan.inner-pro .inner-plan-beneficios li i,
+    .inner-plan.inner-premium .inner-plan-beneficios li i { color: #fbbf24; font-size: 0.7rem; }
+    .inner-plan-btn { width: 100%; padding: 8px; border-radius: 10px; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .inner-plan.inner-free .inner-plan-btn { background: #fff7ed; color: #c2410c; }
+    .inner-plan.inner-free .inner-plan-btn:hover { background: #fed7aa; }
+    .inner-plan.inner-pro .inner-plan-btn,
+    .inner-plan.inner-premium .inner-plan-btn { background: rgba(255,255,255,0.25); color: white; }
+    .inner-plan.inner-pro .inner-plan-btn:hover,
+    .inner-plan.inner-premium .inner-plan-btn:hover { background: rgba(255,255,255,0.38); }
     .success-toast { position: fixed; top: 80px; right: 20px; padding: 14px 24px; border-radius: 40px; color: white; font-weight: 600; z-index: 9999; background: #f97316; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35); animation: fadeInOut 3s ease forwards; }
     @keyframes fadeInOut { 0% { opacity: 0; transform: translateX(20px); } 15% { opacity: 1; transform: translateX(0); } 85% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; transform: translateX(20px); visibility: hidden; } }
-    @media (max-width: 1024px) { 
-      .container { grid-template-columns: 1fr; padding: 0 20px; } 
+    @media (max-width: 1024px) {
+      .container { grid-template-columns: 1fr; padding: 0 20px; }
       .profile-location-card { margin: 20px 20px 24px 20px; }
     }
-    @media (max-width: 680px) { 
-      .user-header { padding: 16px 20px; flex-direction: column; align-items: flex-start; } 
+    @media (max-width: 680px) {
+      .user-header { padding: 16px 20px; flex-direction: column; align-items: flex-start; }
     }
   `;
 
@@ -310,23 +381,106 @@ const Home = () => {
             </span>
           </div>
           <div className="announcements-grid">
-            {announcements.map((announcement) => (
-              <div
-                key={announcement.id}
-                className="announcement-card"
-                style={{ background: announcement.gradient }}
-                onClick={() => handleAnnouncementClick(announcement.title)}
-              >
-                <h4>
-                  <i className={`fas ${announcement.icon}`}></i>{' '}
-                  {announcement.title}
-                </h4>
-                <p>{announcement.description}</p>
-                <div className="announcement-subtext">
-                  {announcement.subText}
+            {announcements.map((announcement) => {
+              if (announcement.isPremiumCard) {
+                return (
+                  <div
+                    key={announcement.id}
+                    className="announcement-card"
+                    style={{ background: announcement.gradient }}
+                    onClick={() => setPlanosAbertos((prev) => !prev)}
+                  >
+                    <div className="premium-card-header">
+                      <h4>
+                        <i className={`fas ${announcement.icon}`}></i>{' '}
+                        {announcement.title}
+                      </h4>
+                      <i
+                        className={`fas fa-chevron-down premium-toggle-icon${planosAbertos ? ' open' : ''}`}
+                      ></i>
+                    </div>
+
+                    {!planosAbertos && (
+                      <div className="premium-collapsed-info">
+                        <p>{announcement.description}</p>
+                        <div className="announcement-subtext">
+                          {announcement.subText}
+                        </div>
+                      </div>
+                    )}
+
+                    {planosAbertos && (
+                      <div className="plans-expanded">
+                        {planos.map((plano) => (
+                          <div
+                            key={plano.id}
+                            className={`inner-plan ${plano.variante}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {plano.popular && (
+                              <div className="inner-plan-badge">
+                                <i className="fas fa-crown"></i> Popular
+                              </div>
+                            )}
+                            <div className="inner-plan-top">
+                              <div className="inner-plan-nome">
+                                <i className={`fas ${plano.icone}`}></i>{' '}
+                                {plano.nome}
+                              </div>
+                              <div>
+                                <div className="inner-plan-preco">
+                                  {plano.precoLabel}
+                                </div>
+                                {plano.preco > 0 && (
+                                  <div className="inner-plan-preco-sub">
+                                    /mês
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <ul className="inner-plan-beneficios">
+                              {plano.beneficios.map((b, i) => (
+                                <li key={i}>
+                                  <i className="fas fa-check-circle"></i> {b}
+                                </li>
+                              ))}
+                            </ul>
+                            <button
+                              className="inner-plan-btn"
+                              onClick={(e) =>
+                                handleAssinarPlano(e, plano.nome, plano.preco)
+                              }
+                            >
+                              {plano.preco === 0
+                                ? 'Plano atual'
+                                : `Assinar ${plano.nome}`}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={announcement.id}
+                  className="announcement-card"
+                  style={{ background: announcement.gradient }}
+                  onClick={() => handleAnnouncementClick(announcement.title)}
+                >
+                  <h4>
+                    <i className={`fas ${announcement.icon}`}></i>{' '}
+                    {announcement.title}
+                  </h4>
+                  <p>{announcement.description}</p>
+                  <div className="announcement-subtext">
+                    {announcement.subText}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
