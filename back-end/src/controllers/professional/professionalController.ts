@@ -223,32 +223,37 @@ export class ProfessionalController {
         .from(professionalProfiles)
         .where(eq(professionalProfiles.user_id, user.userId));
 
+      const cidadeValor = cidade || localizacao || 'Não informado';
+      const valorHoraNum = valor_hora !== undefined && valor_hora !== null && valor_hora !== ''
+        ? parseFloat(valor_hora)
+        : null;
+
       if (existingProfile.length === 0) {
         await db.insert(professionalProfiles).values({
           user_id: user.userId,
-          profissao,
-          bio,
-          experiencia,
+          profissao: profissao || null,
+          bio: bio || null,
+          experiencia: experiencia || null,
           habilidades: habilidades ? JSON.stringify(habilidades) : null,
-          localizacao,
-          descricao,
-          cidade,
-          valor_hora,
-          telefone,
+          localizacao: localizacao || null,
+          descricao: descricao || null,
+          cidade: cidadeValor,
+          valor_hora: valorHoraNum,
+          telefone: telefone || null,
         });
       } else {
         const profileUpdateData: any = {};
         if (profissao !== undefined) profileUpdateData.profissao = profissao;
         if (bio !== undefined) profileUpdateData.bio = bio;
-        if (experiencia !== undefined)
-          profileUpdateData.experiencia = experiencia;
-        if (habilidades !== undefined)
-          profileUpdateData.habilidades = JSON.stringify(habilidades);
-        if (localizacao !== undefined)
+        if (experiencia !== undefined) profileUpdateData.experiencia = experiencia;
+        if (habilidades !== undefined) profileUpdateData.habilidades = JSON.stringify(habilidades);
+        if (localizacao !== undefined) {
           profileUpdateData.localizacao = localizacao;
-        if (descricao !== undefined) profileUpdateData.descricao = descricao;
+          profileUpdateData.cidade = localizacao || 'Não informado';
+        }
         if (cidade !== undefined) profileUpdateData.cidade = cidade;
-        if (valor_hora !== undefined) profileUpdateData.valor_hora = valor_hora;
+        if (descricao !== undefined) profileUpdateData.descricao = descricao;
+        profileUpdateData.valor_hora = valorHoraNum;
         if (telefone !== undefined) profileUpdateData.telefone = telefone;
 
         await db

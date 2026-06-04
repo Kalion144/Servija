@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { db } from "../../db/connection.js";
 import {
+  proposals,
   professionalServices,
   proposalProfessionals,
   users,
@@ -385,6 +386,101 @@ export class ProposalController {
           ? `Erro ao marcar serviço como concluído: ${error.message}`
           : "Erro interno do servidor";
       res.status(500).json({ erro: mensagemErro });
+    }
+  }
+
+  static async listarMarketplace(req: Request, res: Response) {
+    const user = req.user!;
+
+    if (user.userType !== "PROFISSIONAL") {
+      return res.status(403).json({ erro: "Acesso restrito a profissionais" });
+    }
+
+    try {
+      const propostas = await db
+        .select({
+          id: proposals.id,
+          titulo: proposals.titulo,
+          descricao: proposals.descricao,
+          valor: proposals.valor,
+          prazo: proposals.prazo,
+          status: proposals.status,
+          created_at: proposals.created_at,
+          clienteNome: users.nome,
+          clienteId: proposals.client_id,
+        })
+        .from(proposals)
+        .innerJoin(users, eq(users.id, proposals.client_id))
+        .where(eq(proposals.status, "PENDENTE"))
+        .orderBy(desc(proposals.created_at));
+
+      const interesses = await db
+        .select({ proposal_id: proposalProfessionals.proposal_id })
+        .from(proposalProfessionals)
+        .where(eq(proposalProfessionals.professional_id, user.userId));
+
+      const interesseIds = new Set(interesses.map((i) => i.proposal_id));
+
+      const resultado = propostas.map((p) => ({
+        ...p,
+        jaInteressou: interesseIds.has(p.id),
+      }));
+
+      res.json(resultado);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ erro: "Erro interno do servidor" });
+    }
+  }
+
+  static async demonstrarInteresse(req: Request, res: Response) {
+    const user = req.user!;
+    const { id } = req.params;
+
+    if (user.userType !== "PROFISSIONAL") {
+      return res
+        .status(403)
+        .json({ erro: "Apenas profissionais podem demonstrar interesse" });
+    }
+
+    try {
+      const [proposta] = await db
+        .select()
+        .from(proposals)
+        .where(and(eq(proposals.id, Number(id)), eq(proposals.status, "PENDENTE")));
+
+      if (!proposta) {
+        return res
+          .status(404)
+          .json({ erro: "Proposta não encontrada ou não está pendente" });
+      }
+
+      const [existing] = await db
+        .select()
+        .from(proposalProfessionals)
+        .where(
+          and(
+            eq(proposalProfessionals.proposal_id, Number(id)),
+            eq(proposalProfessionals.professional_id, user.userId)
+          )
+        );
+
+      if (existing) {
+        return res
+          .status(400)
+          .json({ erro: "Você já demonstrou interesse nesta proposta" });
+      }
+
+      await db.insert(proposalProfessionals).values({
+        proposal_id: Number(id),
+        professional_id: user.userId,
+        status: "PENDENTE",
+      });
+
+      res.json({ mensagem: "Interesse registrado com sucesso" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ erro: "Erro interno do servidor" });
     }
   }
 }

@@ -43,6 +43,7 @@ interface AuthContextType {
   cadastrar: (data: any) => Promise<Usuario>;
   logout: () => Promise<void>;
   updateUser: (data: Partial<Usuario>) => Promise<void>;
+  refreshUsuario: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -109,9 +110,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUsuario = async () => {
+    const response = await obterDadosUsuario();
+    if (response.usuario) setUsuario(response.usuario);
+  };
+
   return (
     <AuthContext.Provider
-      value={{ usuario, loading, login, cadastrar, logout, updateUser }}
+      value={{ usuario, loading, login, cadastrar, logout, updateUser, refreshUsuario }}
     >
       {children}
     </AuthContext.Provider>
