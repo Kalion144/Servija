@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import { db } from "../../db/connection.js";
 import {
-  proposals,
   professionalServices,
   proposalProfessionals,
   users,
@@ -397,33 +396,32 @@ export class ProposalController {
     }
 
     try {
-      const propostas = await db
+      const servicos = await db
         .select({
-          id: proposals.id,
-          titulo: proposals.titulo,
-          descricao: proposals.descricao,
-          valor: proposals.valor,
-          prazo: proposals.prazo,
-          status: proposals.status,
-          created_at: proposals.created_at,
+          id: professionalServices.id,
+          titulo: professionalServices.titulo,
+          descricao: professionalServices.descricao,
+          valor: professionalServices.preco,
+          status: professionalServices.status,
+          created_at: professionalServices.created_at,
           clienteNome: users.nome,
-          clienteId: proposals.client_id,
+          clienteId: professionalServices.client_id,
         })
-        .from(proposals)
-        .innerJoin(users, eq(users.id, proposals.client_id))
-        .where(eq(proposals.status, "PENDENTE"))
-        .orderBy(desc(proposals.created_at));
+        .from(professionalServices)
+        .innerJoin(users, eq(users.id, professionalServices.client_id))
+        .where(eq(professionalServices.status, "PENDENTE"))
+        .orderBy(desc(professionalServices.created_at));
 
       const interesses = await db
-        .select({ proposal_id: proposalProfessionals.proposal_id })
+        .select({ service_id: proposalProfessionals.service_id })
         .from(proposalProfessionals)
         .where(eq(proposalProfessionals.professional_id, user.userId));
 
-      const interesseIds = new Set(interesses.map((i) => i.proposal_id));
+      const interesseIds = new Set(interesses.map((i) => i.service_id));
 
-      const resultado = propostas.map((p) => ({
-        ...p,
-        jaInteressou: interesseIds.has(p.id),
+      const resultado = servicos.map((s) => ({
+        ...s,
+        jaInteressou: interesseIds.has(s.id),
       }));
 
       res.json(resultado);
@@ -444,15 +442,15 @@ export class ProposalController {
     }
 
     try {
-      const [proposta] = await db
+      const [servico] = await db
         .select()
-        .from(proposals)
-        .where(and(eq(proposals.id, Number(id)), eq(proposals.status, "PENDENTE")));
+        .from(professionalServices)
+        .where(and(eq(professionalServices.id, Number(id)), eq(professionalServices.status, "PENDENTE")));
 
-      if (!proposta) {
+      if (!servico) {
         return res
           .status(404)
-          .json({ erro: "Proposta não encontrada ou não está pendente" });
+          .json({ erro: "Serviço não encontrado ou não está pendente" });
       }
 
       const [existing] = await db
@@ -460,7 +458,7 @@ export class ProposalController {
         .from(proposalProfessionals)
         .where(
           and(
-            eq(proposalProfessionals.proposal_id, Number(id)),
+            eq(proposalProfessionals.service_id, Number(id)),
             eq(proposalProfessionals.professional_id, user.userId)
           )
         );
@@ -468,11 +466,11 @@ export class ProposalController {
       if (existing) {
         return res
           .status(400)
-          .json({ erro: "Você já demonstrou interesse nesta proposta" });
+          .json({ erro: "Você já demonstrou interesse neste serviço" });
       }
 
       await db.insert(proposalProfessionals).values({
-        proposal_id: Number(id),
+        service_id: Number(id),
         professional_id: user.userId,
         status: "PENDENTE",
       });
