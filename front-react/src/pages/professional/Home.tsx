@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { listarPropostasMarketplace, demonstrarInteresse } from '../../services/api';
+import PremiumPlansCard from './PremiumPlansCard'; // ajuste o path conforme sua estrutura
 
 const Home = () => {
   const navigate = useNavigate();
@@ -10,7 +11,6 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [toastMsg, setToastMsg] = useState('');
   const [toastError, setToastError] = useState(false);
-  const [planosAbertos, setPlanosAbertos] = useState(false);
   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string, isError = false) => {
@@ -66,8 +66,7 @@ const Home = () => {
     showToast(`✅ ${title} em desenvolvimento!`);
   };
 
-  const handleAssinarPlano = (e: React.MouseEvent, nome: string, preco: number) => {
-    e.stopPropagation();
+  const handleAssinarPlano = (nome: string, preco: number) => {
     if (preco === 0) {
       showToast('Você já está no plano Free!');
     } else {
@@ -76,15 +75,6 @@ const Home = () => {
   };
 
   const announcements = [
-    {
-      id: 1,
-      title: '💼 Premium Profissional',
-      description: 'Ganhe destaque nos resultados de busca!',
-      subText: 'Primeiro mês gratuito',
-      gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-      icon: 'fa-gem',
-      isPremiumCard: true,
-    },
     {
       id: 2,
       title: '📊 Relatórios Avançados',
@@ -100,37 +90,6 @@ const Home = () => {
       subText: 'Novidade exclusiva',
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       icon: 'fa-comments',
-    },
-  ];
-
-  const planos = [
-    {
-      id: 1,
-      nome: 'Free',
-      preco: 0,
-      precoLabel: 'Grátis',
-      icone: 'fa-user',
-      variante: 'inner-free',
-      beneficios: ['3 clientes por dia', 'Perfil público'],
-    },
-    {
-      id: 2,
-      nome: 'Pro',
-      preco: 59.99,
-      precoLabel: 'R$ 59,99',
-      icone: 'fa-briefcase',
-      variante: 'inner-pro',
-      beneficios: ['10 clientes/dia', 'Chat em tempo real', 'Impulso de ranking', 'Verificado'],
-    },
-    {
-      id: 3,
-      nome: 'Premium',
-      preco: 129.99,
-      precoLabel: 'R$ 129,99',
-      icone: 'fa-gem',
-      variante: 'inner-premium',
-      popular: true,
-      beneficios: ['Clientes ilimitados', 'Tudo do Pro', 'Clientes premium'],
     },
   ];
 
@@ -346,88 +305,22 @@ const Home = () => {
             </span>
           </div>
           <div className="announcements-grid">
-            {announcements.map((announcement) => {
-              if (announcement.isPremiumCard) {
-                return (
-                  <div
-                    key={announcement.id}
-                    className="announcement-card"
-                    style={{ background: announcement.gradient }}
-                    onClick={() => setPlanosAbertos((prev) => !prev)}
-                  >
-                    <div className="premium-card-header">
-                      <h4>
-                        <i className={`fas ${announcement.icon}`}></i>{' '}
-                        {announcement.title}
-                      </h4>
-                      <i className={`fas fa-chevron-down premium-toggle-icon${planosAbertos ? ' open' : ''}`}></i>
-                    </div>
+            <PremiumPlansCard onSubscribe={handleAssinarPlano} />
 
-                    {!planosAbertos && (
-                      <div className="premium-collapsed-info">
-                        <p>{announcement.description}</p>
-                        <div className="announcement-subtext">{announcement.subText}</div>
-                      </div>
-                    )}
-
-                    {planosAbertos && (
-                      <div className="plans-expanded">
-                        {planos.map((plano) => (
-                          <div
-                            key={plano.id}
-                            className={`inner-plan ${plano.variante}`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {plano.popular && (
-                              <div className="inner-plan-badge">
-                                <i className="fas fa-crown"></i> Popular
-                              </div>
-                            )}
-                            <div className="inner-plan-top">
-                              <div className="inner-plan-nome">
-                                <i className={`fas ${plano.icone}`}></i> {plano.nome}
-                              </div>
-                              <div>
-                                <div className="inner-plan-preco">{plano.precoLabel}</div>
-                                {plano.preco > 0 && <div className="inner-plan-preco-sub">/mês</div>}
-                              </div>
-                            </div>
-                            <ul className="inner-plan-beneficios">
-                              {plano.beneficios.map((b, i) => (
-                                <li key={i}>
-                                  <i className="fas fa-check-circle"></i> {b}
-                                </li>
-                              ))}
-                            </ul>
-                            <button
-                              className="inner-plan-btn"
-                              onClick={(e) => handleAssinarPlano(e, plano.nome, plano.preco)}
-                            >
-                              {plano.preco === 0 ? 'Plano atual' : `Assinar ${plano.nome}`}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              return (
-                <div
-                  key={announcement.id}
-                  className="announcement-card"
-                  style={{ background: announcement.gradient }}
-                  onClick={() => handleAnnouncementClick(announcement.title)}
-                >
-                  <h4>
-                    <i className={`fas ${announcement.icon}`}></i> {announcement.title}
-                  </h4>
-                  <p>{announcement.description}</p>
-                  <div className="announcement-subtext">{announcement.subText}</div>
-                </div>
-              );
-            })}
+            {announcements.map((announcement) => (
+              <div
+                key={announcement.id}
+                className="announcement-card"
+                style={{ background: announcement.gradient }}
+                onClick={() => handleAnnouncementClick(announcement.title)}
+              >
+                <h4>
+                  <i className={`fas ${announcement.icon}`}></i> {announcement.title}
+                </h4>
+                <p>{announcement.description}</p>
+                <div className="announcement-subtext">{announcement.subText}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
