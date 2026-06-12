@@ -17,7 +17,17 @@ export class RatingController {
         .json({ erro: "Apenas clientes podem criar avaliações" });
     }
 
-    const { proposal_professional_id, estrelas, comentario } = req.body;
+    const {
+      proposal_professional_id,
+      estrelas_trabalho,
+      estrelas_tempo_execucao,
+      estrelas_tempo_resposta,
+      comentario,
+    } = req.body;
+
+    const estrelas = Math.round(
+      (estrelas_trabalho + estrelas_tempo_execucao + estrelas_tempo_resposta) / 3
+    );
 
     try {
       const [pp] = await db
@@ -40,7 +50,12 @@ export class RatingController {
       const existingRating = await db
         .select()
         .from(ratings)
-        .where(eq(ratings.proposal_professional_id, proposal_professional_id));
+        .where(
+          and(
+            eq(ratings.proposal_professional_id, proposal_professional_id),
+            eq(ratings.avaliador_tipo, "CLIENTE")
+          )
+        );
 
       if (existingRating.length > 0) {
         return res
@@ -54,7 +69,11 @@ export class RatingController {
           proposal_professional_id,
           client_id: user.userId,
           professional_id: pp.professional_id,
+          avaliador_tipo: "CLIENTE",
           estrelas,
+          estrelas_trabalho,
+          estrelas_tempo_execucao,
+          estrelas_tempo_resposta,
           comentario,
         })
         .returning({ id: ratings.id });
@@ -68,10 +87,18 @@ export class RatingController {
         const stats = await db
           .select({
             media: avg(ratings.estrelas),
+            media_trabalho: avg(ratings.estrelas_trabalho),
+            media_tempo_execucao: avg(ratings.estrelas_tempo_execucao),
+            media_tempo_resposta: avg(ratings.estrelas_tempo_resposta),
             total: count(ratings.id),
           })
           .from(ratings)
-          .where(eq(ratings.professional_id, pp.professional_id));
+          .where(
+            and(
+              eq(ratings.professional_id, pp.professional_id),
+              eq(ratings.avaliador_tipo, "CLIENTE")
+            )
+          );
 
         const [stat] = stats;
         if (stat) {
@@ -79,6 +106,9 @@ export class RatingController {
             .update(professionalProfiles)
             .set({
               media_estrelas: Number(stat.media) || 0,
+              media_trabalho: Number(stat.media_trabalho) || 0,
+              media_tempo_execucao: Number(stat.media_tempo_execucao) || 0,
+              media_tempo_resposta: Number(stat.media_tempo_resposta) || 0,
               total_avaliacoes: Number(stat.total),
             })
             .where(eq(professionalProfiles.user_id, pp.professional_id));
@@ -93,11 +123,14 @@ export class RatingController {
       res.status(201).json({
         mensagem: "Avaliação criada com sucesso",
         avaliacao: {
-          id: avaliacao.id,
+          id: avaliacao?.id,
           proposal_professional_id,
           client_id: user.userId,
           professional_id: pp.professional_id,
           estrelas,
+          estrelas_trabalho,
+          estrelas_tempo_execucao,
+          estrelas_tempo_resposta,
           comentario,
         },
       });

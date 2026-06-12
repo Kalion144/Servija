@@ -1,15 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { listarMeusServicos } from '../../services/api';
+import {
+  listarMeusServicos,
+  listarPropostasRecebidas,
+  criarAvaliacao,
+} from '../../services/api';
+import { getUserCity } from '../../lib/userLocation';
+import CitySearchBar from '../../components/CitySearchBar';
 
 const Services = () => {
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
   const [servicos, setServicos] = useState([]);
+  const [propostas, setPropostas] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState(null);
+  const [rating, setRating] = useState({
+    estrelas_trabalho: 5,
+    estrelas_tempo_execucao: 5,
+    estrelas_tempo_resposta: 5,
+    comentario: '',
+  });
+  const [cidadeInput, setCidadeInput] = useState('');
+  const [cidadeFiltro, setCidadeFiltro] = useState('');
   const toastTimeoutRef = useRef(null);
 
   const showToast = (msg, isError = false) => {
@@ -20,19 +37,51 @@ const Services = () => {
 
   useEffect(() => {
     carregarServicos();
+    carregarPropostas();
   }, []);
 
-  const carregarServicos = async () => {
+  const minhaCidade = getUserCity(usuario);
+
+  const carregarServicos = async (cidade?: string) => {
     try {
-      const dados = await listarMeusServicos();
+      const dados = await listarMeusServicos(
+        cidade ? { cidade, busca: cidade } : undefined,
+      );
       if (dados.servicos) setServicos(dados.servicos);
     } catch (error) {
       console.error(error);
     }
   };
 
+  const handleBuscarCidade = () => {
+    const filtro = cidadeInput.trim();
+    setCidadeFiltro(filtro);
+    carregarServicos(filtro || undefined);
+  };
+
+  const handleLimparCidade = () => {
+    setCidadeInput('');
+    setCidadeFiltro('');
+    carregarServicos();
+  };
+
+  const handleUsarMinhaCidade = () => {
+    if (!minhaCidade) return;
+    setCidadeInput(minhaCidade);
+    setCidadeFiltro(minhaCidade);
+    carregarServicos(minhaCidade);
+  };
+
+  const carregarPropostas = async () => {
+    try {
+      const dados = await listarPropostasRecebidas();
+      if (dados.propostas) setPropostas(dados.propostas);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const openServiceModal = (servico) => {
-    // Parse fotos if it's a JSON string
     if (servico.fotos && typeof servico.fotos === 'string') {
       try {
         servico.fotos = JSON.parse(servico.fotos);
@@ -43,9 +92,46 @@ const Services = () => {
     setSelectedService(servico);
     setModalOpen(true);
   };
+
   const closeModal = () => {
     setModalOpen(false);
     setSelectedService(null);
+  };
+
+  const openRatingModal = (proposta) => {
+    setSelectedProposal(proposta);
+    setRating({
+      estrelas_trabalho: 5,
+      estrelas_tempo_execucao: 5,
+      estrelas_tempo_resposta: 5,
+      comentario: '',
+    });
+    setRatingModalOpen(true);
+  };
+
+  const closeRatingModal = () => {
+    setRatingModalOpen(false);
+    setSelectedProposal(null);
+  };
+
+  const handleSubmitRating = async () => {
+    if (!selectedProposal) return;
+    try {
+      await criarAvaliacao({
+        proposal_professional_id: selectedProposal.id,
+        estrelas_trabalho: rating.estrelas_trabalho,
+        estrelas_tempo_execucao: rating.estrelas_tempo_execucao,
+        estrelas_tempo_resposta: rating.estrelas_tempo_resposta,
+        comentario: rating.comentario,
+      });
+      showToast('Avaliação criada com sucesso!');
+      await carregarServicos();
+      await carregarPropostas();
+      closeRatingModal();
+    } catch (error) {
+      console.error(error);
+      showToast('Erro ao criar avaliação', true);
+    }
   };
 
   const formatarValor = (valor) => {
@@ -57,16 +143,16 @@ const Services = () => {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #f0f4fa; font-family: 'Inter', sans-serif; padding: 1.5rem; color: #1e2e3e; }
     .services-container { max-width: 1300px; margin: 0 auto; }
-    .user-header { background: white; border-radius: 28px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 16px rgba(0,0,0,0.06); border: 1px solid #e6eef8; }
+    .user-header { background: white; border-radius: 28px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 2px 16px rgba(0,0,0,0.06); border: 1px solid #e6eef8; }
     .user-info h2 { font-size: 1.7rem; font-weight: 700; color: #0f172a; margin-bottom: 0.4rem; }
     .user-info p { color: #64748b; font-size: 0.95rem; }
     .user-actions { display: flex; gap: 0.8rem; }
     .icon-btn { background: #f0f4fa; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 1rem; color: #475569; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
     .icon-btn:hover { background: #3b82f6; color: white; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2); }
     .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; }
-    .section-card { background: white; border-radius: 28px; padding: 1.75rem; margin-bottom: 1.5rem; border: 1px solid #e6eef8; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+    .section-card { background: white; border-radius: 28px; padding: 1.75rem; margin-bottom: 1.5rem; border: 1px solid #e6eef8; box-shadow: 0 2px 16px rgba(0,0,0,0.04); }
     .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.8rem; }
-    .section-header h3 { font-size: 1.3rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.6rem; }
+    .section-header h3 { font-size: 1.4rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.6rem; }
     .update-btn { border: none; background: #3b82f6; color: white; padding: 0.7rem 1.2rem; border-radius: 28px; cursor: pointer; font-weight: 600; transition: 0.3s; display: flex; align-items: center; gap: 0.4rem; }
     .update-btn:hover { background: #2563eb; transform: translateY(-2px); }
     .progress-section { margin-bottom: 1.5rem; }
@@ -94,6 +180,23 @@ const Services = () => {
     .error-toast { background: #dc2626; }
     .image-preview { margin-top: 1rem; display: flex; gap: 0.7rem; flex-wrap: wrap; }
     .preview-img { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .rating-btn { background: #f97316; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 0.4rem; }
+    .rating-btn:hover { background: #ea580c; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
+    .rating-modal-header { background: linear-gradient(135deg, #f97316, #ea580c); }
+    .stars-container { display: flex; gap: 0.5rem; margin-bottom: 1rem; justify-content: center; }
+    .star { font-size: 2.5rem; color: #d1d5db; cursor: pointer; transition: 0.2s; }
+    .star.filled { color: #f59e0b; }
+    .star:hover { transform: scale(1.1); }
+    .rating-input { width: 100%; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 16px; font-size: 1rem; min-height: 100px; resize: vertical; margin-top: 0.5rem; font-family: inherit; }
+    .rating-input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1); }
+    .rating-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
+    .btn-rating-submit { background: linear-gradient(135deg, #f97316, #ea580c); color: white; border: none; padding: 0.9rem 1.8rem; border-radius: 16px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; }
+    .btn-rating-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(249, 115, 22, 0.3); }
+    .btn-rating-cancel { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 0.9rem 1.8rem; border-radius: 16px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; }
+    .btn-rating-cancel:hover { background: #fca5a5; color: #fff; }
+    .rating-display { background: #fff7ed; padding: 1rem; border-radius: 16px; margin-top: 0.8rem; border: 1px solid #fed7aa; }
+    .rating-display-header { display: flex; gap: 0.35rem; color: #7c2d12; font-weight: 600; margin-bottom: 0.5rem; }
+    .rating-stars { color: #f59e0b; }
     @keyframes modalFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } .user-header { flex-direction: column; align-items: flex-start; } }
   `;
@@ -157,10 +260,25 @@ const Services = () => {
                 <h3>
                   <i className="fas fa-clipboard-list"></i> Meus Serviços
                 </h3>
-                <button className="update-btn" onClick={carregarServicos}>
+                <button className="update-btn" onClick={() => carregarServicos(cidadeFiltro || undefined)}>
                   <i className="fas fa-sync-alt"></i> Atualizar
                 </button>
               </div>
+              <CitySearchBar
+                value={cidadeInput}
+                onChange={setCidadeInput}
+                onSearch={handleBuscarCidade}
+                onClear={handleLimparCidade}
+                onUseMyCity={minhaCidade ? handleUsarMinhaCidade : undefined}
+                myCityLabel={minhaCidade ? `Minha cidade (${minhaCidade})` : undefined}
+                accentColor="#2563eb"
+                placeholder="Filtrar meus serviços por cidade..."
+              />
+              {cidadeFiltro && (
+                <p className="city-filter-active">
+                  Filtrando por: <strong>{cidadeFiltro}</strong>
+                </p>
+              )}
               <div className="progress-section">
                 <div className="progress-label">
                   <span>Ativos</span>
@@ -179,7 +297,7 @@ const Services = () => {
                 <div
                   style={{
                     textAlign: 'center',
-                    padding: '3rem',
+                    padding: '40px',
                     color: '#64748b',
                   }}
                 >
@@ -195,50 +313,180 @@ const Services = () => {
                   </p>
                 </div>
               ) : (
-                servicos.map((servico) => (
-                  <div
-                    key={servico.id}
-                    className="service-card"
-                    onClick={() => openServiceModal(servico)}
-                  >
-                    <div className="service-title">
-                      <span>{servico.titulo}</span>
-                      <span
-                        className={`status-badge status-${servico.status?.toLowerCase()}`}
-                      >
-                        <i className="fas fa-clock"></i>{' '}
-                        {servico.status === 'PENDENTE'
-                          ? 'Pendente'
-                          : servico.status}
-                      </span>
-                    </div>
-                    {servico.categoria && (
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        <span className="category-badge">
-                          {servico.categoria}
+                servicos.map((servico) => {
+                  const serviceProposals = propostas.filter(
+                    (p) => p.service_id === servico.id
+                  );
+                  const finalProposal = serviceProposals.find(
+                    (p) => p.status === 'FINALIZADA' || p.status === 'AVALIADA'
+                  );
+                  const hasRating = finalProposal?.avaliacao;
+
+                  return (
+                    <div
+                      key={servico.id}
+                      className="service-card"
+                      onClick={(e) => {
+                        if ((e.target as HTMLElement).closest('.rating-btn')) {
+                          e.stopPropagation();
+                          return;
+                        }
+                        openServiceModal(servico);
+                      }}
+                    >
+                      <div className="service-title">
+                        <span>{servico.titulo}</span>
+                        <span
+                          className="status-badge"
+                          style={{
+                            background:
+                              servico.status === 'FINALIZADA' ||
+                              servico.status === 'AVALIADA'
+                                ? '#ede9fe'
+                                : servico.status === 'EM_ANDAMENTO'
+                                  ? '#dbeafe'
+                                  : '#f3f4f6',
+                            color:
+                              servico.status === 'FINALIZADA' ||
+                              servico.status === 'AVALIADA'
+                                ? '#7c3aed'
+                                : servico.status === 'EM_ANDAMENTO'
+                                  ? '#1d4ed8'
+                                  : '#6b7280',
+                          }}
+                        >
+                          <i
+                            className={`fas ${
+                              servico.status === 'FINALIZADA'
+                                ? 'fa-flag-checkered'
+                                : servico.status === 'AVALIADA'
+                                  ? 'fa-star'
+                                  : servico.status === 'EM_ANDAMENTO'
+                                    ? 'fa-spinner'
+                                    : 'fa-clock'
+                            }`}
+                          ></i>{' '}
+                          {servico.status === 'PENDENTE'
+                            ? 'Pendente'
+                            : servico.status === 'FINALIZADA'
+                              ? 'Finalizado'
+                              : servico.status === 'AVALIADA'
+                                ? 'Avaliado'
+                                : servico.status}
                         </span>
                       </div>
-                    )}
-                    {servico.localizacao && (
-                      <div
-                        style={{
-                          fontSize: '0.9rem',
-                          color: '#64748b',
-                          marginBottom: '0.5rem',
-                        }}
-                      >
-                        <i className="fas fa-map-marker-alt"></i>{' '}
-                        {servico.localizacao}
+                      {servico.categoria && (
+                        <div style={{ marginBottom: '0.5rem' }}>
+                          <span className="category-badge">
+                            {servico.categoria}
+                          </span>
+                        </div>
+                      )}
+                      {servico.localizacao && (
+                        <div
+                          style={{
+                            fontSize: '0.9rem',
+                            color: '#64748b',
+                            marginBottom: '0.5rem',
+                          }}
+                        >
+                          <i className="fas fa-map-marker-alt"></i>{' '}
+                          {servico.localizacao}
+                        </div>
+                      )}
+                      {/* Show professional data if available */}
+                      {finalProposal?.profissional && (
+                        <div
+                          style={{
+                            marginBottom: '0.8rem',
+                            padding: '0.8rem',
+                            background: '#f8fafc',
+                            borderRadius: '16px',
+                            fontSize: '0.9rem',
+                          }}
+                        >
+                          <p
+                            style={{ marginBottom: '0.4rem', color: '#334155' }}
+                          >
+                            <strong>Profissional: </strong>
+                            {finalProposal.profissional.nome}
+                          </p>
+                          {finalProposal.profissional.profissao && (
+                            <p
+                              style={{
+                                color: '#475569',
+                                marginBottom: '0.25rem',
+                              }}
+                            >
+                              {finalProposal.profissional.profissao}
+                            </p>
+                          )}
+                          {finalProposal.profissional.media_estrelas && (
+                            <p style={{ color: '#f59e0b' }}>
+                              <i className="fas fa-star"></i>{' '}
+                              {finalProposal.profissional.media_estrelas}
+                              {finalProposal.profissional.total_avaliacoes && (
+                                <span
+                                  style={{
+                                    color: '#64748b',
+                                    fontSize: '0.85rem',
+                                  }}
+                                >
+                                  ({finalProposal.profissional.total_avaliacoes}{' '}
+                                  avaliações)
+                                </span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {/* Show rating if available */}
+                      {hasRating && (
+                        <div className="rating-display">
+                          <div className="rating-display-header">
+                            <i className="fas fa-star"></i> Sua Avaliação
+                          </div>
+                          <div style={{ marginBottom: '0.4rem' }}>
+                            <span className="rating-stars">
+                              {'★'.repeat(Number(hasRating.estrelas))}
+                              {'☆'.repeat(5 - Number(hasRating.estrelas))}
+                            </span>
+                          </div>
+                          {hasRating.comentario && (
+                            <p
+                              style={{
+                                color: '#7c2d12',
+                                fontSize: '0.9rem',
+                                fontStyle: 'italic',
+                              }}
+                            >
+                              "{hasRating.comentario}"
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <div className="service-footer">
+                        <span>
+                          <i className="fas fa-dollar-sign"></i>{' '}
+                          {formatarValor(servico.preco)}
+                        </span>
+                        {finalProposal &&
+                          servico.status === 'FINALIZADA' &&
+                          !hasRating && (
+                            <button
+                              className="rating-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openRatingModal(finalProposal);
+                              }}
+                            >
+                              <i className="fas fa-star"></i> Avaliar
+                            </button>
+                          )}
                       </div>
-                    )}
-                    <div className="service-footer">
-                      <span>
-                        <i className="fas fa-dollar-sign"></i>{' '}
-                        {formatarValor(servico.preco)}
-                      </span>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
@@ -337,19 +585,19 @@ const Services = () => {
                       icon: 'fa-spinner',
                     },
                     FINALIZADA: {
-                      label: 'Finalizada',
+                      label: 'Finalizado',
                       color: '#7c3aed',
                       bg: '#ede9fe',
                       icon: 'fa-flag-checkered',
                     },
                     AVALIADA: {
-                      label: 'Avaliada',
+                      label: 'Avaliado',
                       color: '#0891b2',
                       bg: '#cffafe',
                       icon: 'fa-star',
                     },
                     CANCELADA: {
-                      label: 'Cancelada',
+                      label: 'Cancelado',
                       color: '#6b7280',
                       bg: '#f3f4f6',
                       icon: 'fa-ban',
@@ -569,6 +817,120 @@ const Services = () => {
                     </>
                   );
                 })()}
+            </div>
+          </div>
+        </div>
+        {/* Rating Modal */}
+        <div
+          className={`modal ${ratingModalOpen ? 'active' : ''}`}
+          onClick={closeRatingModal}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header rating-modal-header">
+              <h3>Avaliar Profissional</h3>
+              <button className="close-modal" onClick={closeRatingModal}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              {selectedProposal && (
+                <>
+                  <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <p
+                      style={{
+                        color: '#64748b',
+                        fontSize: '0.9rem',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      Avaliando:{' '}
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                        {selectedProposal.profissional?.nome}
+                      </span>
+                    </p>
+                    <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                      Serviço: {selectedProposal.servico?.titulo}
+                    </p>
+                  </div>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#334155' }}>
+                      Qualidade do Trabalho
+                    </label>
+                    <div className="stars-container" style={{ marginBottom: '0.5rem' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <i
+                          key={`trab-${star}`}
+                          className={`fas fa-star star ${star <= rating.estrelas_trabalho ? 'filled' : ''}`}
+                          onClick={() => setRating((prev) => ({ ...prev, estrelas_trabalho: star }))}
+                        ></i>
+                      ))}
+                    </div>
+
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#334155' }}>
+                      Tempo de Execução
+                    </label>
+                    <div className="stars-container" style={{ marginBottom: '0.5rem' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <i
+                          key={`exec-${star}`}
+                          className={`fas fa-star star ${star <= rating.estrelas_tempo_execucao ? 'filled' : ''}`}
+                          onClick={() => setRating((prev) => ({ ...prev, estrelas_tempo_execucao: star }))}
+                        ></i>
+                      ))}
+                    </div>
+
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#334155' }}>
+                      Tempo de Resposta
+                    </label>
+                    <div className="stars-container" style={{ marginBottom: '0.5rem' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <i
+                          key={`resp-${star}`}
+                          className={`fas fa-star star ${star <= rating.estrelas_tempo_resposta ? 'filled' : ''}`}
+                          onClick={() => setRating((prev) => ({ ...prev, estrelas_tempo_resposta: star }))}
+                        ></i>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: 'block',
+                        fontWeight: 700,
+                        color: '#0f172a',
+                        marginBottom: '0.5rem',
+                      }}
+                    >
+                      Comentário (opcional)
+                    </label>
+                    <textarea
+                      className="rating-input"
+                      placeholder="Descreva sua experiência..."
+                      value={rating.comentario}
+                      onChange={(e) =>
+                        setRating((prev) => ({
+                          ...prev,
+                          comentario: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="rating-actions">
+                    <button
+                      className="btn-rating-cancel"
+                      onClick={closeRatingModal}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      className="btn-rating-submit"
+                      onClick={handleSubmitRating}
+                    >
+                      Enviar Avaliação
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

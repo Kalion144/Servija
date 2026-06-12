@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   listarMinhasPropostasProfissional,
   marcarServicoComoConcluido,
+  criarAvaliacaoProfissional,
 } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -25,6 +26,14 @@ const Proposals: React.FC = () => {
     'normal'
   );
   const [loading, setLoading] = useState(true);
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<any>(null);
+  const [rating, setRating] = useState({
+    estrelas_trabalho: 5,
+    estrelas_tempo_execucao: 5,
+    estrelas_tempo_resposta: 5,
+    comentario: '',
+  });
 
   const loadPropostas = async () => {
     try {
@@ -54,6 +63,44 @@ const Proposals: React.FC = () => {
         error instanceof Error
           ? error.message
           : 'Erro ao marcar serviço como concluído!';
+      setToastMessage(mensagem);
+      setToastType('error');
+    }
+  };
+
+  const openRatingModal = (proposta: any) => {
+    setSelectedProposal(proposta);
+    setRating({
+      estrelas_trabalho: 5,
+      estrelas_tempo_execucao: 5,
+      estrelas_tempo_resposta: 5,
+      comentario: '',
+    });
+    setRatingModalOpen(true);
+  };
+
+  const closeRatingModal = () => {
+    setRatingModalOpen(false);
+    setSelectedProposal(null);
+  };
+
+  const handleSubmitRating = async () => {
+    if (!selectedProposal) return;
+    try {
+      await criarAvaliacaoProfissional({
+        proposal_professional_id: selectedProposal.id,
+        estrelas_trabalho: rating.estrelas_trabalho,
+        estrelas_tempo_execucao: rating.estrelas_tempo_execucao,
+        estrelas_tempo_resposta: rating.estrelas_tempo_resposta,
+        comentario: rating.comentario,
+      });
+      setToastMessage('Avaliação do cliente criada com sucesso!');
+      setToastType('success');
+      await loadPropostas();
+      closeRatingModal();
+    } catch (error) {
+      console.error(error);
+      const mensagem = error instanceof Error ? error.message : 'Erro ao avaliar cliente';
       setToastMessage(mensagem);
       setToastType('error');
     }
@@ -218,6 +265,24 @@ const Proposals: React.FC = () => {
                       ✅ Marcar como Concluído
                     </button>
                   )}
+                  {proposta.status === 'FINALIZADA' && (
+                    <button
+                      style={{
+                        padding: '10px 22px',
+                        background: '#e0f2fe',
+                        color: '#0284c7',
+                        border: 'none',
+                        borderRadius: '60px',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        fontSize: '0.9rem',
+                        boxShadow: '0 4px 12px rgba(2, 132, 199, 0.1)',
+                      }}
+                      onClick={() => openRatingModal(proposta)}
+                    >
+                      ⭐ Avaliar Cliente
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -261,7 +326,25 @@ const Proposals: React.FC = () => {
     .empty-state span { font-size: 4rem; opacity: 0.7; display: block; margin-bottom: 10px; }
     .success-toast { position: fixed; top: 24px; right: 24px; padding: 14px 24px; border-radius: 60px; color: white; font-weight: 700; z-index: 9999; background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 4px 14px rgba(249,115,22,0.25); animation: fadeInOut 3s ease forwards; }
     .error-toast { background: #dc2626 !important; box-shadow: 0 4px 14px rgba(220,38,38,0.25) !important; }
-    @keyframes fadeInOut { 0% { opacity:0; transform: translateX(20px); } 15% { opacity:1; transform: translateX(0); } 85% { opacity:1; transform: translateX(0); } 100% { opacity:0; transform: translateX(20px); visibility: hidden; } }
+
+    /* Modal de Avaliação */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; border-radius: 28px; max-width: 520px; width: 100%; max-height: 88vh; overflow: auto; animation: modalFade 0.3s ease; }
+    .modal-header { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; padding: 1.3rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-radius: 28px 28px 0 0; }
+    .modal-header h3 { font-size: 1.25rem; font-weight: 700; }
+    .close-modal { background: rgba(255,255,255,0.15); border: none; color: white; font-size: 1.5rem; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; }
+    .modal-body { padding: 1.5rem; color: #334155; line-height: 1.7; }
+    .stars-container { display: flex; gap: 0.5rem; justify-content: center; }
+    .star { font-size: 2.2rem; color: #d1d5db; cursor: pointer; transition: 0.2s; }
+    .star.filled { color: #f59e0b; }
+    .star:hover { transform: scale(1.1); }
+    .rating-input { width: 100%; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 16px; font-size: 1rem; min-height: 100px; resize: vertical; margin-top: 0.5rem; font-family: inherit; }
+    .rating-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
+    .btn-rating-submit { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; border: none; padding: 0.9rem 1.8rem; border-radius: 16px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; }
+    .btn-rating-cancel { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 0.9rem 1.8rem; border-radius: 16px; font-weight: 700; font-size: 1rem; cursor: pointer; }
+    @keyframes modalFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
     @media (max-width: 700px) {
       .page-header { padding: 24px 20px 18px; }
       .filters-bar { padding: 20px 20px 0; }
@@ -373,6 +456,91 @@ const Proposals: React.FC = () => {
           {toastMessage}
         </div>
       )}
+
+      {/* Modal de Avaliação do Cliente */}
+      <div className={`modal ${ratingModalOpen ? 'active' : ''}`} onClick={closeRatingModal}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>Avaliar Cliente</h3>
+            <button className="close-modal" onClick={closeRatingModal}>
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+          <div className="modal-body">
+            {selectedProposal && (
+              <>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                  <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                    Avaliando o cliente do serviço: <br/>
+                    <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                      {selectedProposal.servico?.titulo}
+                    </span>
+                  </p>
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#334155' }}>
+                    Comunicação e Clareza
+                  </label>
+                  <div className="stars-container" style={{ marginBottom: '0.5rem' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <i
+                        key={`trab-${star}`}
+                        className={`fas fa-star star ${star <= rating.estrelas_trabalho ? 'filled' : ''}`}
+                        onClick={() => setRating((prev) => ({ ...prev, estrelas_trabalho: star }))}
+                      ></i>
+                    ))}
+                  </div>
+
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#334155' }}>
+                    Cumprimento de Acordos
+                  </label>
+                  <div className="stars-container" style={{ marginBottom: '0.5rem' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <i
+                        key={`exec-${star}`}
+                        className={`fas fa-star star ${star <= rating.estrelas_tempo_execucao ? 'filled' : ''}`}
+                        onClick={() => setRating((prev) => ({ ...prev, estrelas_tempo_execucao: star }))}
+                      ></i>
+                    ))}
+                  </div>
+
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, color: '#334155' }}>
+                    Tempo de Resposta
+                  </label>
+                  <div className="stars-container" style={{ marginBottom: '0.5rem' }}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <i
+                        key={`resp-${star}`}
+                        className={`fas fa-star star ${star <= rating.estrelas_tempo_resposta ? 'filled' : ''}`}
+                        onClick={() => setRating((prev) => ({ ...prev, estrelas_tempo_resposta: star }))}
+                      ></i>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#0f172a', marginBottom: '0.5rem' }}>
+                    Comentário (opcional)
+                  </label>
+                  <textarea
+                    className="rating-input"
+                    placeholder="Descreva como foi trabalhar com este cliente..."
+                    value={rating.comentario}
+                    onChange={(e) => setRating((prev) => ({ ...prev, comentario: e.target.value }))}
+                  />
+                </div>
+                <div className="rating-actions">
+                  <button className="btn-rating-cancel" onClick={closeRatingModal}>
+                    Cancelar
+                  </button>
+                  <button className="btn-rating-submit" onClick={handleSubmitRating}>
+                    Enviar Avaliação
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
 
       <link
         rel="stylesheet"

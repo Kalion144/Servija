@@ -2,6 +2,8 @@ import { Router } from "express";
 import { ProfessionalController } from "../../controllers/professional/professionalController.js";
 import { ProposalController } from "../../controllers/professional/proposalController.js";
 import { ServiceController } from "../../controllers/professional/ServiceController.js";
+import { FavoritesController } from "../../controllers/FavoritesController.js";
+import { ProfessionalRatingController } from "../../controllers/professional/ratingController.js";
 import { authenticateToken } from "../../middleware/authMiddleware.js";
 
 const router = Router();
@@ -43,6 +45,36 @@ router.post(
   ProposalController.marcarConcluido,
 );
 router.get("/proposals", authenticateToken, ProposalController.listarMinhas);
+
+// Rotas de favoritos (Usuários) para profissionais
+router.post(
+  "/favorites/users",
+  authenticateToken,
+  FavoritesController.toggleFavoriteUser,
+);
+router.get("/favorites/users", authenticateToken, FavoritesController.listFavoriteUsers);
+router.get(
+  "/favorites/users/check/:favorite_user_id",
+  authenticateToken,
+  FavoritesController.checkFavoriteUser,
+);
+
+// Rotas de favoritos (Serviços) para profissionais
+router.post(
+  "/favorites/services",
+  authenticateToken,
+  FavoritesController.toggleFavoriteService,
+);
+router.get("/favorites/services", authenticateToken, FavoritesController.listFavoriteServices);
+router.get(
+  "/favorites/services/check/:favorite_service_id",
+  authenticateToken,
+  FavoritesController.checkFavoriteService,
+);
+
+// Avaliações
+router.post("/ratings", authenticateToken, ProfessionalRatingController.criar);
+
 // Dynamic route last!
 router.get("/:id", ProfessionalController.obterPorId);
 

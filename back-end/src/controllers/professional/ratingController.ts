@@ -3,21 +3,31 @@ import { db } from "../../db/connection.js";
 import {
   ratings,
   proposalProfessionals,
-  professionalProfiles,
+  users,
 } from "../../db/schema.js";
-import { eq, and, desc, avg, count } from "drizzle-orm";
+import { eq, and, avg, count } from "drizzle-orm";
 
-export class RatingController {
+export class ProfessionalRatingController {
   static async criar(req: Request, res: Response) {
     const user = req.user!;
 
-    if (user.userType !== "CLIENTE") {
+    if (user.userType !== "PROFISSIONAL") {
       return res
         .status(403)
-        .json({ erro: "Apenas clientes podem criar avaliações" });
+        .json({ erro: "Apenas profissionais podem avaliar clientes" });
     }
 
-    const { proposal_professional_id, estrelas, comentario } = req.body;
+    const {
+      proposal_professional_id,
+      estrelas_trabalho,
+      estrelas_tempo_execucao,
+      estrelas_tempo_resposta,
+      comentario,
+    } = req.body;
+
+    const estrelas = Math.round(
+      (estrelas_trabalho + estrelas_tempo_execucao + estrelas_tempo_resposta) / 3
+    );
 
     try {
       const [pp] = await db
@@ -31,7 +41,7 @@ export class RatingController {
           .json({ erro: "Registro de proposta não encontrado" });
       }
 
-      if (pp.status !== "FINALIZADA") {
+      if (pp.status !== "FINALIZADA" && pp.status !== "AVALIADA") {
         return res
           .status(400)
           .json({ erro: "Só pode avaliar serviços finalizados" });
@@ -40,84 +50,94 @@ export class RatingController {
       const existingRating = await db
         .select()
         .from(ratings)
-        .where(eq(ratings.proposal_professional_id, proposal_professional_id));
+        .where(
+          and(
+            eq(ratings.proposal_professional_id, proposal_professional_id),
+            eq(ratings.avaliador_tipo, "PROFISSIONAL")
+          )
+        );
 
       if (existingRating.length > 0) {
         return res
           .status(400)
-          .json({ erro: "Avaliação já existe para este serviço" });
+          .json({ erro: "Você já avaliou o cliente para este serviço" });
       }
+
+      // Precisamos encontrar o client_id através da tabela professionalServices
+      const clientQuery = await db.query.proposalProfessionals.findFirst({
+        where: eq(proposalProfessionals.id, proposal_professional_id),
+        with: {
+          service: true,
+        },
+      });
+
+      if (!clientQuery || !clientQuery.service) {
+        return res
+          .status(404)
+          .json({ erro: "Serviço original não encontrado" });
+      }
+
+      const client_id = clientQuery.service.client_id;
 
       const [avaliacao] = await db
         .insert(ratings)
         .values({
           proposal_professional_id,
-          client_id: user.userId,
-          professional_id: pp.professional_id,
+          client_id: client_id,
+          professional_id: user.userId,
+          avaliador_tipo: "PROFISSIONAL",
           estrelas,
+          estrelas_trabalho,
+          estrelas_tempo_execucao,
+          estrelas_tempo_resposta,
           comentario,
         })
         .returning({ id: ratings.id });
 
-      const [profile] = await db
-        .select()
-        .from(professionalProfiles)
-        .where(eq(professionalProfiles.user_id, pp.professional_id));
+      const stats = await db
+        .select({
+          media: avg(ratings.estrelas),
+          media_trabalho: avg(ratings.estrelas_trabalho),
+          media_tempo_execucao: avg(ratings.estrelas_tempo_execucao),
+          media_tempo_resposta: avg(ratings.estrelas_tempo_resposta),
+          total: count(ratings.id),
+        })
+        .from(ratings)
+        .where(
+          and(
+            eq(ratings.client_id, client_id),
+            eq(ratings.avaliador_tipo, "PROFISSIONAL")
+          )
+        );
 
-      if (profile) {
-        const stats = await db
-          .select({
-            media: avg(ratings.estrelas),
-            total: count(ratings.id),
+      const [stat] = stats;
+      if (stat) {
+        await db
+          .update(users)
+          .set({
+            media_estrelas: Number(stat.media) || 0,
+            media_trabalho: Number(stat.media_trabalho) || 0,
+            media_tempo_execucao: Number(stat.media_tempo_execucao) || 0,
+            media_tempo_resposta: Number(stat.media_tempo_resposta) || 0,
+            total_avaliacoes: Number(stat.total),
           })
-          .from(ratings)
-          .where(eq(ratings.professional_id, pp.professional_id));
-
-        const [stat] = stats;
-        if (stat) {
-          await db
-            .update(professionalProfiles)
-            .set({
-              media_estrelas: Number(stat.media) || 0,
-              total_avaliacoes: Number(stat.total),
-            })
-            .where(eq(professionalProfiles.user_id, pp.professional_id));
-        }
+          .where(eq(users.id, client_id));
       }
 
-      await db
-        .update(proposalProfessionals)
-        .set({ status: "AVALIADA" })
-        .where(eq(proposalProfessionals.id, proposal_professional_id));
-
       res.status(201).json({
-        mensagem: "Avaliação criada com sucesso",
+        mensagem: "Avaliação do cliente criada com sucesso",
         avaliacao: {
-          id: avaliacao.id,
+          id: avaliacao?.id,
           proposal_professional_id,
-          client_id: user.userId,
-          professional_id: pp.professional_id,
+          client_id,
+          professional_id: user.userId,
           estrelas,
+          estrelas_trabalho,
+          estrelas_tempo_execucao,
+          estrelas_tempo_resposta,
           comentario,
         },
       });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ erro: "Erro interno do servidor" });
-    }
-  }
-
-  static async listarPorProfissional(req: Request, res: Response) {
-    const { id } = req.params;
-
-    try {
-      const avaliacoes = await db
-        .select()
-        .from(ratings)
-        .where(eq(ratings.professional_id, Number(id)))
-        .orderBy(desc(ratings.created_at));
-
-      res.json(avaliacoes);
     } catch (error) {
       console.error(error);
       res.status(500).json({ erro: "Erro interno do servidor" });

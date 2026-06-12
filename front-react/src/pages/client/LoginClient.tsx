@@ -42,7 +42,9 @@ export default function LoginClient() {
       });
 
       setTimeout(() => {
-        navigate('/client/home');
+        navigate(
+          usuarioLogado.perfilIncompleto ? '/client/onboarding' : '/client/home',
+        );
       }, 1000);
     } catch (error) {
       console.log(error);

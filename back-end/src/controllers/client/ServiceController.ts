@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { db } from "../../db/connection.js";
 import { professionalServices, users } from "../../db/schema.js";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, or, like, type SQL } from "drizzle-orm";
 
 export class ServiceController {
   static async criar(req: Request, res: Response) {
@@ -74,14 +74,36 @@ export class ServiceController {
 
   static async listarMeus(req: Request, res: Response) {
     const user = req.user!;
+    const { cidade, busca } = req.query;
 
     console.log("📋 Listando serviços do cliente ID:", user.userId);
 
     try {
+      const conditions: SQL[] = [
+        eq(professionalServices.client_id, user.userId),
+      ];
+
+      if (cidade && typeof cidade === "string" && cidade.trim()) {
+        const term = `%${cidade.trim()}%`;
+        conditions.push(like(professionalServices.localizacao, term));
+      }
+
+      if (busca && typeof busca === "string" && busca.trim()) {
+        const term = `%${busca.trim()}%`;
+        conditions.push(
+          or(
+            like(professionalServices.titulo, term),
+            like(professionalServices.descricao, term),
+            like(professionalServices.localizacao, term),
+            like(professionalServices.categoria, term),
+          )!,
+        );
+      }
+
       const servicos = await db
         .select()
         .from(professionalServices)
-        .where(eq(professionalServices.client_id, user.userId))
+        .where(and(...conditions))
         .orderBy(desc(professionalServices.created_at));
 
       console.log("✅", servicos.length, "serviço(s) encontrado(s)");
@@ -94,10 +116,39 @@ export class ServiceController {
 
   static async listarTodos(req: Request, res: Response) {
     const user = req.user!;
+    const { cidade, busca } = req.query;
 
     console.log("🔍 Listando todos os serviços pendentes...");
 
     try {
+      const conditions: SQL[] = [
+        eq(professionalServices.status, "PENDENTE"),
+      ];
+
+      if (cidade && typeof cidade === "string" && cidade.trim()) {
+        const term = `%${cidade.trim()}%`;
+        conditions.push(
+          or(
+            like(professionalServices.localizacao, term),
+            like(users.cidade, term),
+          )!,
+        );
+      }
+
+      if (busca && typeof busca === "string" && busca.trim()) {
+        const term = `%${busca.trim()}%`;
+        conditions.push(
+          or(
+            like(professionalServices.titulo, term),
+            like(professionalServices.descricao, term),
+            like(professionalServices.localizacao, term),
+            like(professionalServices.categoria, term),
+            like(users.nome, term),
+            like(users.cidade, term),
+          )!,
+        );
+      }
+
       const servicosComClientes = await db
         .select({
           id: professionalServices.id,
@@ -114,10 +165,12 @@ export class ServiceController {
           cliente_id: users.id,
           cliente_nome: users.nome,
           cliente_foto: users.foto,
+          cliente_cidade: users.cidade,
+          cliente_estado: users.estado,
         })
         .from(professionalServices)
         .innerJoin(users, eq(professionalServices.client_id, users.id))
-        .where(eq(professionalServices.status, "PENDENTE"))
+        .where(and(...conditions))
         .orderBy(desc(professionalServices.created_at));
 
       console.log(

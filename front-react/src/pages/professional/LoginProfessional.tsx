@@ -42,7 +42,11 @@ export default function LoginProfessional() {
       });
 
       setTimeout(() => {
-        navigate('/professional/home');
+        navigate(
+          usuarioLogado.perfilIncompleto
+            ? '/professional/onboarding'
+            : '/professional/home',
+        );
       }, 1000);
     } catch (error) {
       console.log(error);

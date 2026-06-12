@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { listarTodosServicos } from '../../services/api';
+import { listarTodosServicos, listFavoriteServices, toggleFavoriteService } from '../../services/api';
+import { getUserLocation, getUserCity } from '../../lib/userLocation';
+import CitySearchBar from '../../components/CitySearchBar';
+import FavoritesModal from '../../components/FavoritesModal';
 
 const Home = () => {
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
   const [servicosDisponiveis, setServicosDisponiveis] = useState([]);
+  const [favoritos, setFavoritos] = useState<number[]>([]);
   const [toastMessage, setToastMessage] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
-  const [location, setLocation] = useState('Brasília - DF');
+  const [cidadeInput, setCidadeInput] = useState('');
+  const [cidadeFiltro, setCidadeFiltro] = useState('');
+  const [carregando, setCarregando] = useState(false);
+  const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
   const toastTimeoutRef = useRef(null);
 
   const showToastMessage = (message) => {
@@ -19,21 +26,63 @@ const Home = () => {
     toastTimeoutRef.current = setTimeout(() => setToastVisible(false), 3000);
   };
 
+  const carregarFavoritosIds = async () => {
+    try {
+      const favData = await listFavoriteServices(true, { limit: '50' });
+      if (favData?.data) {
+        setFavoritos(favData.data.map((fav: { favorite_service_id: number }) => fav.favorite_service_id));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const carregarServicos = async (cidade?: string) => {
+    setCarregando(true);
+    try {
+      const dados = await listarTodosServicos(
+        cidade ? { cidade, busca: cidade } : undefined,
+      );
+      if (dados.servicos) {
+        setServicosDisponiveis(dados.servicos);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
-      try {
-        const dados = await listarTodosServicos();
-        if (dados.servicos) {
-          setServicosDisponiveis(dados.servicos);
-        }
-      } catch (error) {
-        console.error(error);
-      }
+      await carregarServicos();
+      await carregarFavoritosIds();
     };
     carregarDados();
   }, []);
 
   const userName = usuario?.nome || 'Profissional';
+  const userLocation = getUserLocation(usuario);
+  const minhaCidade = getUserCity(usuario);
+
+  const handleBuscarCidade = () => {
+    const filtro = cidadeInput.trim();
+    setCidadeFiltro(filtro);
+    carregarServicos(filtro || undefined);
+  };
+
+  const handleLimparCidade = () => {
+    setCidadeInput('');
+    setCidadeFiltro('');
+    carregarServicos();
+  };
+
+  const handleUsarMinhaCidade = () => {
+    if (!minhaCidade) return;
+    setCidadeInput(minhaCidade);
+    setCidadeFiltro(minhaCidade);
+    carregarServicos(minhaCidade);
+  };
 
   const handleCardClick = (servico) => {
     navigate(`/professional/service-details/${servico.id}`, {
@@ -41,9 +90,21 @@ const Home = () => {
     });
   };
 
-  const handleEditLocation = () => {
-    const newLocation = prompt('Digite sua cidade e UF:', location);
-    if (newLocation) setLocation(newLocation);
+  const handleToggleFavorite = async (e: React.MouseEvent, servicoId: number) => {
+    e.stopPropagation();
+    try {
+      const res = await toggleFavoriteService(servicoId, true);
+      if (res.isFavorite) {
+        setFavoritos((prev) => [...prev, servicoId]);
+        showToastMessage('Serviço adicionado aos favoritos! ❤️');
+      } else {
+        setFavoritos((prev) => prev.filter((id) => id !== servicoId));
+        showToastMessage('Serviço removido dos favoritos.');
+      }
+    } catch (error) {
+      console.error(error);
+      showToastMessage('Erro ao atualizar favorito');
+    }
   };
 
   const handleLogout = async () => {
@@ -92,15 +153,13 @@ const Home = () => {
     .user-actions { display: flex; gap: 12px; flex-wrap: wrap; }
     .icon-btn { width: 45px; height: 45px; border: none; border-radius: 12px; background: #fff7ed; color: #f97316; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; transition: 0.3s; cursor: pointer; }
     .icon-btn:hover { background: #f97316; color: white; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
-    .profile-location-card { background: white; margin: 20px 40px 24px 40px; border-radius: 24px; padding: 20px 26px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; box-shadow: 0 6px 14px rgba(0,0,0,0.05); border: 1px solid #fed7aa; }
-    .user-info-card { display: flex; align-items: center; gap: 16px; }
     .avatar { width: 64px; height: 64px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; font-weight: 700; }
     .user-details h3 { font-size: 1.4rem; font-weight: 700; color: #1f2937; }
     .user-details span { color: #9ca3af; font-size: 0.9rem; }
     .location { display: flex; align-items: center; gap: 6px; color: #6b7280; font-size: 0.9rem; margin-top: 4px; }
     .edit-icon { background: #fff7ed; padding: 10px 18px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; color: #c2410c; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; }
     .edit-icon:hover { background: #fed7aa; }
-    .container { max-width: 1400px; margin: 0 auto; padding: 0 40px; display: grid; grid-template-columns: 2fr 1fr; gap: 28px; }
+    .container { max-width: 1400px; align-content: start; margin: 0 auto; padding: 0 40px; display: grid; grid-template-columns: 2fr 1fr; gap: 28px; }
     .section-title { font-size: 1.6rem; font-weight: 700; color: #1f2937; margin: 16px 0 20px 0; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
     .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 32px; }
     .service-card { background: white; border-radius: 24px; padding: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.06); transition: all 0.3s; border: 1px solid #fed7aa; cursor: pointer; }
@@ -124,8 +183,7 @@ const Home = () => {
     .success-toast { position: fixed; top: 80px; right: 20px; padding: 14px 24px; border-radius: 40px; color: white; font-weight: 600; z-index: 9999; background: #f97316; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35); animation: fadeInOut 3s ease forwards; }
     @keyframes fadeInOut { 0% { opacity: 0; transform: translateX(20px); } 15% { opacity: 1; transform: translateX(0); } 85% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; transform: translateX(20px); visibility: hidden; } }
     @media (max-width: 1024px) { 
-      .container { grid-template-columns: 1fr; padding: 0 20px; } 
-      .profile-location-card { margin: 20px 20px 24px 20px; }
+      .container { grid-template-columns: 1fr;  padding: 0 20px; } 
     }
     @media (max-width: 680px) { 
       .user-header { padding: 16px 20px; flex-direction: column; align-items: flex-start; } 
@@ -139,7 +197,7 @@ const Home = () => {
         <div className="user-info">
           <h2>Olá, {userName.split(' ')[0]}!👋</h2>
           <div className="user-location">
-            <i className="fas fa-map-marker-alt"></i> {location}
+            <i className="fas fa-map-marker-alt"></i> {userLocation}
           </div>
         </div>
         <div className="user-actions">
@@ -149,6 +207,13 @@ const Home = () => {
             title="Início"
           >
             <i className="fas fa-home"></i>
+          </button>
+          <button
+            className="icon-btn"
+            onClick={() => setFavoritesModalOpen(true)}
+            title="Favoritos"
+          >
+            <i className="fas fa-heart" style={{ color: '#ef4444' }}></i>
           </button>
           <button
             className="icon-btn"
@@ -170,20 +235,7 @@ const Home = () => {
         </div>
       </div>
 
-      <div className="profile-location-card">
-        <div className="user-info-card">
-          <div className="avatar">{userName.charAt(0).toUpperCase()}</div>
-          <div className="user-details">
-            <h3>{userName}</h3>
-            <div className="location">
-              <i className="fas fa-map-marker-alt"></i> {location}
-            </div>
-          </div>
-        </div>
-        <div className="edit-icon" onClick={handleEditLocation}>
-          <i className="fas fa-pen"></i> Alterar local
-        </div>
-      </div>
+   
 
       <div className="container">
         <div className="services-section">
@@ -194,12 +246,34 @@ const Home = () => {
             <span
               style={{ fontSize: '1rem', color: '#6b7280', fontWeight: '500' }}
             >
-              {servicosDisponiveis.length} serviços disponíveis
+              {servicosDisponiveis.length} serviço{servicosDisponiveis.length !== 1 ? 's' : ''} disponíve{servicosDisponiveis.length !== 1 ? 'is' : 'l'}
             </span>
           </div>
 
+          <CitySearchBar
+            value={cidadeInput}
+            onChange={setCidadeInput}
+            onSearch={handleBuscarCidade}
+            onClear={handleLimparCidade}
+            onUseMyCity={minhaCidade ? handleUsarMinhaCidade : undefined}
+            myCityLabel={minhaCidade ? `Minha cidade (${minhaCidade})` : undefined}
+            accentColor="#f97316"
+            placeholder="Filtrar serviços e clientes por cidade..."
+          />
+
+          {cidadeFiltro && (
+            <p className="city-filter-active">
+              Exibindo em: <strong>{cidadeFiltro}</strong>
+              {' '}({servicosDisponiveis.length} resultado{servicosDisponiveis.length !== 1 ? 's' : ''})
+            </p>
+          )}
+
           <div className="services-grid">
-            {servicosDisponiveis.length > 0 ? (
+            {carregando ? (
+              <div className="service-card" style={{ textAlign: 'center', padding: '2rem' }}>
+                <i className="fas fa-spinner fa-spin"></i> Buscando...
+              </div>
+            ) : servicosDisponiveis.length > 0 ? (
               servicosDisponiveis.map((servico) => (
                 <div
                   key={servico.id}
@@ -211,13 +285,35 @@ const Home = () => {
                       <div className="client-avatar">
                         {servico.cliente_nome.charAt(0).toUpperCase()}
                       </div>
-                      <div className="client-name">{servico.cliente_nome}</div>
+                      <div>
+                        <div className="client-name">{servico.cliente_nome}</div>
+                        {(servico.cliente_cidade || servico.localizacao) && (
+                          <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '2px' }}>
+                            <i className="fas fa-map-marker-alt"></i>{' '}
+                            {servico.cliente_cidade
+                              ? `${servico.cliente_cidade}${servico.cliente_estado ? ` - ${servico.cliente_estado}` : ''}`
+                              : servico.localizacao}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {servico.urgente === 1 && (
-                      <span className="urgent-badge">
-                        <i className="fas fa-bolt"></i> Urgente
-                      </span>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {servico.urgente === 1 && (
+                        <span className="urgent-badge">
+                          <i className="fas fa-bolt"></i> Urgente
+                        </span>
+                      )}
+                      <button 
+                        onClick={(e) => handleToggleFavorite(e, servico.id)}
+                        style={{ 
+                          background: 'none', border: 'none', cursor: 'pointer', 
+                          fontSize: '1.4rem', color: favoritos.includes(servico.id) ? '#ef4444' : '#cbd5e1',
+                          transition: '0.2s', padding: '4px'
+                        }}
+                      >
+                        <i className={favoritos.includes(servico.id) ? "fas fa-heart" : "far fa-heart"}></i>
+                      </button>
+                    </div>
                   </div>
                   <div className="service-name">{servico.titulo}</div>
                   {servico.descricao && (
@@ -332,6 +428,14 @@ const Home = () => {
       </div>
 
       {toastVisible && <div className="success-toast">{toastMessage}</div>}
+
+      <FavoritesModal
+        isOpen={favoritesModalOpen}
+        onClose={() => setFavoritesModalOpen(false)}
+        userType="PROFISSIONAL"
+        onFavoritesUpdated={carregarFavoritosIds}
+      />
+
       <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"

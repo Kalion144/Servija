@@ -18,6 +18,8 @@ import ProfessionalSendProposal from './pages/professional/SendProposal';
 import ProfessionalProfile from './pages/professional/Profile';
 import LoginProfessional from './pages/professional/LoginProfessional';
 import CadastroProfessional from './pages/professional/CadastroProfessional';
+import OnboardingFlow from './pages/onboarding/OnboardingFlow';
+import OnboardingRoute from './components/OnboardingRoute';
 
 function App() {
   return (
@@ -29,6 +31,14 @@ function App() {
         {/* Rotas do Cliente */}
         <Route path="/client/login" element={<LoginClient />} />
         <Route path="/client/cadastro" element={<CadastroClient />} />
+        <Route
+          path="/client/onboarding"
+          element={
+            <OnboardingRoute allowedType="CLIENTE">
+              <OnboardingFlow userType="CLIENTE" />
+            </OnboardingRoute>
+          }
+        />
         <Route
           path="/client/home"
           element={
@@ -69,12 +79,19 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Rotas do Profissional */}
         <Route path="/professional/login" element={<LoginProfessional />} />
         <Route
           path="/professional/cadastro"
           element={<CadastroProfessional />}
+        />
+        <Route
+          path="/professional/onboarding"
+          element={
+            <OnboardingRoute allowedType="PROFISSIONAL">
+              <OnboardingFlow userType="PROFISSIONAL" />
+            </OnboardingRoute>
+          }
         />
         <Route
           path="/professional/home"
@@ -116,7 +133,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Rota de 404 (Página não encontrada) */}
         <Route path="*" element={<NotFound />} />
       </Routes>

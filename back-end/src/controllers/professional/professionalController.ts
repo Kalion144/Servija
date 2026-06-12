@@ -6,13 +6,39 @@ import {
   professionalServices,
   ratings,
 } from "../../db/schema.js";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, or, like, type SQL } from "drizzle-orm";
 
 export class ProfessionalController {
   static async listar(req: Request, res: Response) {
-    const { cidade, categoria } = req.query;
+    const { cidade, busca } = req.query;
 
     try {
+      const conditions: SQL[] = [eq(users.tipo, "PROFISSIONAL")];
+
+      if (cidade && typeof cidade === "string" && cidade.trim()) {
+        const term = `%${cidade.trim()}%`;
+        conditions.push(
+          or(
+            like(professionalProfiles.cidade, term),
+            like(professionalProfiles.localizacao, term),
+            like(users.cidade, term),
+          )!,
+        );
+      }
+
+      if (busca && typeof busca === "string" && busca.trim()) {
+        const term = `%${busca.trim()}%`;
+        conditions.push(
+          or(
+            like(users.nome, term),
+            like(professionalProfiles.profissao, term),
+            like(professionalProfiles.cidade, term),
+            like(professionalProfiles.localizacao, term),
+            like(users.cidade, term),
+          )!,
+        );
+      }
+
       const profissionais = await db
         .select({
           id: users.id,
@@ -20,11 +46,36 @@ export class ProfessionalController {
           email: users.email,
           foto: users.foto,
           tipo: users.tipo,
+          bio: users.bio,
+          user_cidade: users.cidade,
+          user_estado: users.estado,
+          profissao: professionalProfiles.profissao,
+          experiencia: professionalProfiles.experiencia,
+          habilidades: professionalProfiles.habilidades,
+          localizacao: professionalProfiles.localizacao,
+          cidade: professionalProfiles.cidade,
+          valor_hora: professionalProfiles.valor_hora,
+          avaliacao: professionalProfiles.media_estrelas,
+          total_avaliacoes: professionalProfiles.total_avaliacoes,
         })
         .from(users)
-        .where(eq(users.tipo, "PROFISSIONAL"));
+        .leftJoin(
+          professionalProfiles,
+          eq(professionalProfiles.user_id, users.id),
+        )
+        .where(and(...conditions));
 
-      res.json({ profissionais });
+      // Process habilidades: parse JSON string to array if present
+      const processedProfissionais = profissionais.map((prof) => ({
+        ...prof,
+        habilidades: prof.habilidades
+          ? typeof prof.habilidades === "string"
+            ? JSON.parse(prof.habilidades)
+            : prof.habilidades
+          : null,
+      }));
+
+      res.json({ profissionais: processedProfissionais });
     } catch (error) {
       console.error(error);
       res.status(500).json({ erro: "Erro interno do servidor" });
@@ -48,7 +99,17 @@ export class ProfessionalController {
           email: users.email,
           foto: users.foto,
           tipo: users.tipo,
-          profile: professionalProfiles,
+          bio: users.bio,
+          profile_id: professionalProfiles.id,
+          profissao: professionalProfiles.profissao,
+          experiencia: professionalProfiles.experiencia,
+          habilidades: professionalProfiles.habilidades,
+          localizacao: professionalProfiles.localizacao,
+          cidade: professionalProfiles.cidade,
+          valor_hora: professionalProfiles.valor_hora,
+          avaliacao: professionalProfiles.media_estrelas,
+          total_avaliacoes: professionalProfiles.total_avaliacoes,
+          descricao: professionalProfiles.descricao,
         })
         .from(users)
         .innerJoin(
@@ -61,13 +122,23 @@ export class ProfessionalController {
         return res.status(404).json({ erro: "Profissional não encontrado" });
       }
 
+      // Process habilidades
+      const processedProfissional = {
+        ...profissional,
+        habilidades: profissional.habilidades
+          ? typeof profissional.habilidades === "string"
+            ? JSON.parse(profissional.habilidades)
+            : profissional.habilidades
+          : null,
+      };
+
       const servicos = await db
         .select()
         .from(professionalServices)
         .where(
           eq(
             professionalServices.professional_profile_id,
-            profissional.profile.id,
+            profissional.profile_id,
           ),
         );
 
@@ -85,7 +156,7 @@ export class ProfessionalController {
         .orderBy(desc(ratings.created_at));
 
       res.json({
-        ...profissional,
+        ...processedProfissional,
         servicos,
         avaliacoes,
       });

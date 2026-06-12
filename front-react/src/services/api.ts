@@ -135,11 +135,27 @@ export async function atualizarUsuario(data: Record<string, unknown>) {
   return res.json();
 }
 
-export async function listarProfissionais() {
-  const res = await fetch(`${API_URL}/professionals/`, {
-    method: 'GET',
-    credentials: 'include',
+function buildQueryString(params?: Record<string, string | undefined>) {
+  if (!params) return '';
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value?.trim()) searchParams.append(key, value.trim());
   });
+  const qs = searchParams.toString();
+  return qs ? `?${qs}` : '';
+}
+
+export async function listarProfissionais(params?: {
+  cidade?: string;
+  busca?: string;
+}) {
+  const res = await fetch(
+    `${API_URL}/professionals/${buildQueryString(params)}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+    },
+  );
   return res.json();
 }
 
@@ -208,19 +224,31 @@ export async function criarServico(data: Record<string, unknown>) {
   return json;
 }
 
-export async function listarMeusServicos() {
-  const res = await fetch(`${API_URL}/client/services`, {
-    method: 'GET',
-    credentials: 'include',
-  });
+export async function listarMeusServicos(params?: {
+  cidade?: string;
+  busca?: string;
+}) {
+  const res = await fetch(
+    `${API_URL}/client/services${buildQueryString(params)}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+    },
+  );
   return res.json();
 }
 
-export async function listarTodosServicos() {
-  const res = await fetch(`${API_URL}/client/services/all`, {
-    method: 'GET',
-    credentials: 'include',
-  });
+export async function listarTodosServicos(params?: {
+  cidade?: string;
+  busca?: string;
+}) {
+  const res = await fetch(
+    `${API_URL}/client/services/all${buildQueryString(params)}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+    },
+  );
   return res.json();
 }
 
@@ -407,6 +435,16 @@ export async function criarAvaliacao(data: Record<string, unknown>) {
   return res.json();
 }
 
+export async function criarAvaliacaoProfissional(data: Record<string, unknown>) {
+  const res = await fetch(`${API_URL}/professional/ratings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
 export async function listarAvaliacoesPorProfissional(id: number | string) {
   const res = await fetch(
     `${API_URL}/professionals/ratings/professionals/${id}`,
@@ -418,12 +456,127 @@ export async function listarAvaliacoesPorProfissional(id: number | string) {
   return res.json();
 }
 
+// ==========================================
+// FUNÇÕES DE FAVORITOS
+// ==========================================
+
+export async function toggleFavoriteUser(userId: number, isProfessional: boolean = false) {
+  const endpoint = isProfessional ? '/professional/favorites/users' : '/client/favorites/users';
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ favorite_user_id: userId }),
+  });
+  return res.json();
+}
+
+export async function checkFavoriteUser(userId: number, isProfessional: boolean = false) {
+  const endpoint = isProfessional ? `/professional/favorites/users/check/${userId}` : `/client/favorites/users/check/${userId}`;
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return res.json();
+}
+
+export async function listFavoriteUsers(
+  isProfessional: boolean = false,
+  params?: { search?: string; limit?: string },
+) {
+  const endpoint = isProfessional
+    ? '/professional/favorites/users'
+    : '/client/favorites/users';
+  const query: Record<string, string> = {};
+  if (params?.search) query.search = params.search;
+  if (params?.limit) query.limit = params.limit;
+  const res = await fetch(
+    `${API_URL}${endpoint}${buildQueryString(
+      Object.keys(query).length > 0 ? query : undefined,
+    )}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+    },
+  );
+  return res.json();
+}
+
+export async function toggleFavoriteService(serviceId: number, isProfessional: boolean = false) {
+  const endpoint = isProfessional ? '/professional/favorites/services' : '/client/favorites/services';
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ favorite_service_id: serviceId }),
+  });
+  return res.json();
+}
+
+export async function checkFavoriteService(serviceId: number, isProfessional: boolean = false) {
+  const endpoint = isProfessional ? `/professional/favorites/services/check/${serviceId}` : `/client/favorites/services/check/${serviceId}`;
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return res.json();
+}
+
+export async function listFavoriteServices(
+  isProfessional: boolean = false,
+  params?: { search?: string; limit?: string },
+) {
+  const endpoint = isProfessional
+    ? '/professional/favorites/services'
+    : '/client/favorites/services';
+  const query: Record<string, string> = {};
+  if (params?.search) query.search = params.search;
+  if (params?.limit) query.limit = params.limit;
+  const res = await fetch(
+    `${API_URL}${endpoint}${buildQueryString(
+      Object.keys(query).length > 0 ? query : undefined,
+    )}`,
+    {
+      method: 'GET',
+      credentials: 'include',
+    },
+  );
+  return res.json();
+}
+
 export async function obterDadosUsuario() {
   const res = await fetch(`${API_URL}/auth/me`, {
     method: 'GET',
     credentials: 'include',
   });
   return res.json();
+}
+
+export async function atualizarOnboarding(data: Record<string, unknown>) {
+  const res = await fetch(`${API_URL}/auth/onboarding`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.erro ?? 'Erro ao atualizar perfil');
+  return json;
+}
+
+export async function uploadFotoPerfil(file: File) {
+  const formData = new FormData();
+  formData.append('foto', file);
+
+  const res = await fetch(`${API_URL}/auth/profile/photo`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData,
+  });
+
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.erro ?? 'Erro ao enviar foto');
+  return json;
 }
 
 // Funções de upload de imagens
@@ -456,4 +609,46 @@ export async function uploadMultipleImages(files: File[]) {
   if (!res.ok)
     throw new Error(json.error ?? 'Erro ao fazer upload das imagens');
   return json;
+}
+
+// Favoritos
+export async function toggleFavorite(favoriteUserId: number | string, userType: 'CLIENTE' | 'PROFISSIONAL') {
+  const endpoint = userType === 'CLIENTE' ? '/client/favorites' : '/professionals/favorites';
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ favorite_user_id: favoriteUserId }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.erro ?? 'Erro ao atualizar favoritos');
+  return json;
+}
+
+export async function checkFavorite(favoriteUserId: number | string, userType: 'CLIENTE' | 'PROFISSIONAL') {
+  const endpoint = userType === 'CLIENTE' 
+    ? `/client/favorites/check/${favoriteUserId}` 
+    : `/professionals/favorites/check/${favoriteUserId}`;
+  const res = await fetch(`${API_URL}${endpoint}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return res.json();
+}
+
+export async function listFavorites(userType: 'CLIENTE' | 'PROFISSIONAL', params?: Record<string, unknown>) {
+  const endpoint = userType === 'CLIENTE' ? '/client/favorites' : '/professionals/favorites';
+  const searchParams = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.append(key, String(value));
+    });
+  }
+  const queryString = searchParams.toString() ? `?${searchParams.toString()}` : '';
+  
+  const res = await fetch(`${API_URL}${endpoint}${queryString}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  return res.json();
 }

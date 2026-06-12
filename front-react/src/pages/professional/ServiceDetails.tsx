@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { checkFavoriteUser, toggleFavoriteUser } from '../../services/api';
 
 const ServiceDetails = () => {
   // Hooks
@@ -15,6 +16,7 @@ const ServiceDetails = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState('');
+  const [isClientFavorite, setIsClientFavorite] = useState(false);
 
   // Effects
   useEffect(() => {
@@ -28,6 +30,13 @@ const ServiceDetails = () => {
         }
       }
       setServico(servicoData);
+      
+      // Checar favorito se tiver cliente_id
+      if (servicoData.cliente_id) {
+        checkFavoriteUser(servicoData.cliente_id, true)
+          .then(res => setIsClientFavorite(res.isFavorite))
+          .catch(console.error);
+      }
     }
   }, [id, location]);
 
@@ -50,6 +59,18 @@ const ServiceDetails = () => {
       'Interesse registrado',
       `Você manifestou interesse no serviço "${servico?.titulo}". O cliente será notificado.`
     );
+
+  const handleToggleFavoriteClient = async () => {
+    if (!servico?.cliente_id) return;
+    try {
+      const res = await toggleFavoriteUser(servico.cliente_id, true);
+      setIsClientFavorite(res.isFavorite);
+      showToast(res.isFavorite ? 'Cliente favoritado! ❤️' : 'Cliente removido dos favoritos.');
+    } catch (error) {
+      console.error(error);
+      showToast('Erro ao atualizar favorito');
+    }
+  };
 
   const handleProposal = () =>
     navigate('/professional/send-proposal', { state: { servico } });
@@ -455,6 +476,24 @@ const ServiceDetails = () => {
             <div className="quick-info">
               <h3>📍 Informações Rápidas</h3>
               <div className="info-row">
+                <span>👤 Cliente</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {servico.cliente_nome}
+                  {servico.cliente_id && (
+                    <button 
+                      onClick={handleToggleFavoriteClient}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        fontSize: '1.2rem', color: isClientFavorite ? '#ef4444' : '#cbd5e1'
+                      }}
+                      title="Favoritar Cliente"
+                    >
+                      <i className={isClientFavorite ? "fas fa-heart" : "far fa-heart"}></i>
+                    </button>
+                  )}
+                </span>
+              </div>
+              <div className="info-row">
                 <span>📍 Localização</span>
                 <span>{servico.localizacao}</span>
               </div>
@@ -479,7 +518,7 @@ const ServiceDetails = () => {
             </div>
             <div className="action-buttons">
               <button className="btn-interest" onClick={handleInterest}>
-                <i className="fas fa-heart"></i> Tenho Interesse
+                <i className="fas fa-hand-paper"></i> Tenho Interesse
               </button>
               <button className="btn-proposal" onClick={handleProposal}>
                 <i className="fas fa-paper-plane"></i> Enviar Proposta

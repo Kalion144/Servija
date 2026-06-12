@@ -131,8 +131,8 @@ const Profile = () => {
   const saveProfile = async () => {
     if (!validateForm()) return;
     try {
-      let fotoToSave = formData.foto;
-      if (fotoToSave && fotoToSave.startsWith(API_URL)) {
+      let fotoToSave = avatar;
+      if (fotoToSave?.startsWith(API_URL)) {
         fotoToSave = fotoToSave.substring(API_URL.length);
       }
 
@@ -799,6 +799,46 @@ textarea {
                 disabled={!isEditing}
                 placeholder="Descreva sua experiência profissional"
               />
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h4>
+              <i className="fas fa-star"></i> Reputação
+            </h4>
+            <div className="double-row" style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+              <div className="form-group" style={{ background: '#fff7ed', padding: '1rem', borderRadius: '12px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#7c2d12', marginBottom: '0.5rem' }}>
+                  Estrelas Gerais
+                </label>
+                <div style={{ fontSize: '1.5rem', color: '#f59e0b', fontWeight: 700 }}>
+                  <i className="fas fa-star"></i> {Number(usuario?.perfilProfissional?.media_estrelas || 0).toFixed(1)} <span style={{ fontSize: '0.9rem', color: '#9a3412', fontWeight: 400 }}>({usuario?.perfilProfissional?.total_avaliacoes || 0} avaliações)</span>
+                </div>
+              </div>
+              <div className="form-group" style={{ background: '#fff7ed', padding: '1rem', borderRadius: '12px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#7c2d12', marginBottom: '0.5rem' }}>
+                  Qualidade do Trabalho
+                </label>
+                <div style={{ fontSize: '1.2rem', color: '#f59e0b', fontWeight: 600 }}>
+                  <i className="fas fa-star"></i> {Number(usuario?.perfilProfissional?.media_trabalho || 0).toFixed(1)}
+                </div>
+              </div>
+              <div className="form-group" style={{ background: '#fff7ed', padding: '1rem', borderRadius: '12px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#7c2d12', marginBottom: '0.5rem' }}>
+                  Tempo de Execução
+                </label>
+                <div style={{ fontSize: '1.2rem', color: '#f59e0b', fontWeight: 600 }}>
+                  <i className="fas fa-star"></i> {Number(usuario?.perfilProfissional?.media_tempo_execucao || 0).toFixed(1)}
+                </div>
+              </div>
+              <div className="form-group" style={{ background: '#fff7ed', padding: '1rem', borderRadius: '12px' }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#7c2d12', marginBottom: '0.5rem' }}>
+                  Tempo de Resposta
+                </label>
+                <div style={{ fontSize: '1.2rem', color: '#f59e0b', fontWeight: 600 }}>
+                  <i className="fas fa-star"></i> {Number(usuario?.perfilProfissional?.media_tempo_resposta || 0).toFixed(1)}
+                </div>
+              </div>
             </div>
           </div>
 

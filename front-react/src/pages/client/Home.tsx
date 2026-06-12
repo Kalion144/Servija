@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { listarProfissionais } from '../../services/api';
+import { listarProfissionais, listFavoriteUsers, toggleFavoriteUser } from '../../services/api';
+import { getUserLocation, getUserCity } from '../../lib/userLocation';
+import CitySearchBar from '../../components/CitySearchBar';
+import FavoritesModal from '../../components/FavoritesModal';
 
 const Home = () => {
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
   const [prestadores, setPrestadores] = useState([]);
+  const [favoritos, setFavoritos] = useState<number[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [toast, setToast] = useState({
@@ -14,6 +18,10 @@ const Home = () => {
     message: '',
     isError: false,
   });
+  const [cidadeInput, setCidadeInput] = useState('');
+  const [cidadeFiltro, setCidadeFiltro] = useState('');
+  const [carregando, setCarregando] = useState(false);
+  const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
   const toastTimeoutRef = useRef(null);
 
   const showToast = (message, isError = false) => {
@@ -24,29 +32,87 @@ const Home = () => {
     }, 3000);
   };
 
+  const carregarFavoritosIds = async () => {
+    try {
+      const favData = await listFavoriteUsers(false, { limit: '50' });
+      if (favData?.data) {
+        setFavoritos(favData.data.map((fav: { favorite_user_id: number }) => fav.favorite_user_id));
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const carregarProfissionais = async (cidade?: string) => {
+    setCarregando(true);
+    try {
+      const dados = await listarProfissionais(
+        cidade ? { cidade, busca: cidade } : undefined,
+      );
+      if (dados.profissionais) {
+        setPrestadores(dados.profissionais);
+      } else if (Array.isArray(dados)) {
+        setPrestadores(dados);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
   useEffect(() => {
     const carregarDados = async () => {
-      try {
-        const dados = await listarProfissionais();
-        if (dados.profissionais) {
-          setPrestadores(dados.profissionais);
-        } else if (Array.isArray(dados)) {
-          setPrestadores(dados);
-        }
-      } catch (error) {
-        console.error(error);
-      }
+      await carregarProfissionais();
+      await carregarFavoritosIds();
     };
     carregarDados();
   }, []);
 
   const clienteNome = usuario?.nome || 'Cliente';
-  const clienteLocal = 'Brasília - DF';
+  const clienteLocal = getUserLocation(usuario);
+  const minhaCidade = getUserCity(usuario);
+
+  const handleBuscarCidade = () => {
+    const filtro = cidadeInput.trim();
+    setCidadeFiltro(filtro);
+    carregarProfissionais(filtro || undefined);
+  };
+
+  const handleLimparCidade = () => {
+    setCidadeInput('');
+    setCidadeFiltro('');
+    carregarProfissionais();
+  };
+
+  const handleUsarMinhaCidade = () => {
+    if (!minhaCidade) return;
+    setCidadeInput(minhaCidade);
+    setCidadeFiltro(minhaCidade);
+    carregarProfissionais(minhaCidade);
+  };
 
   const openModal = (id) => {
     const prof = prestadores.find((p) => p.id === id);
     setSelectedProfessional(prof);
     setModalOpen(true);
+  };
+
+  const handleToggleFavorite = async (e: React.MouseEvent, profId: number) => {
+    e.stopPropagation();
+    try {
+      const res = await toggleFavoriteUser(profId, false);
+      if (res.isFavorite) {
+        setFavoritos((prev) => [...prev, profId]);
+        showToast('Profissional adicionado aos favoritos! ❤️');
+      } else {
+        setFavoritos((prev) => prev.filter((id) => id !== profId));
+        showToast('Profissional removido dos favoritos.');
+      }
+    } catch (error) {
+      console.error(error);
+      showToast('Erro ao atualizar favorito', true);
+    }
   };
 
   const closeModal = () => {
@@ -179,6 +245,13 @@ const Home = () => {
           <div className="user-actions">
             <button
               className="icon-btn"
+              onClick={() => setFavoritesModalOpen(true)}
+              title="Favoritos"
+            >
+              <i className="fas fa-heart" style={{ color: '#ef4444' }}></i>
+            </button>
+            <button
+              className="icon-btn"
               onClick={() => navigate('/client/proposals')}
               title="Propostas"
             >
@@ -217,20 +290,32 @@ const Home = () => {
               <h3>
                 <i className="fas fa-users"></i> Profissionais próximos a você
               </h3>
-              <button
-                className="view-all-btn"
-                onClick={() => navigate('/client/home')}
-              >
-                Ver todos{' '}
-                <i
-                  className="fas fa-arrow-right"
-                  style={{ marginLeft: '4px' }}
-                ></i>
-              </button>
             </div>
 
+            <CitySearchBar
+              value={cidadeInput}
+              onChange={setCidadeInput}
+              onSearch={handleBuscarCidade}
+              onClear={handleLimparCidade}
+              onUseMyCity={minhaCidade ? handleUsarMinhaCidade : undefined}
+              myCityLabel={minhaCidade ? `Minha cidade (${minhaCidade})` : undefined}
+              accentColor="#2563eb"
+              placeholder="Filtrar profissionais por cidade..."
+            />
+
+            {cidadeFiltro && (
+              <p className="city-filter-active">
+                Exibindo profissionais em: <strong>{cidadeFiltro}</strong>
+                {' '}({prestadores.length} resultado{prestadores.length !== 1 ? 's' : ''})
+              </p>
+            )}
+
             <div className="cards-grid">
-              {prestadores.length > 0 ? (
+              {carregando ? (
+                <div className="professional-card" style={{ textAlign: 'center', padding: '2rem' }}>
+                  <i className="fas fa-spinner fa-spin"></i> Buscando...
+                </div>
+              ) : prestadores.length > 0 ? (
                 prestadores.map((prof) => (
                   <div
                     key={prof.id}
@@ -250,6 +335,16 @@ const Home = () => {
                           </div>
                         </div>
                       </div>
+                      <button 
+                        onClick={(e) => handleToggleFavorite(e, prof.id)}
+                        style={{ 
+                          background: 'none', border: 'none', cursor: 'pointer', 
+                          fontSize: '1.4rem', color: favoritos.includes(prof.id) ? '#ef4444' : '#cbd5e1',
+                          transition: '0.2s', padding: '4px'
+                        }}
+                      >
+                        <i className={favoritos.includes(prof.id) ? "fas fa-heart" : "far fa-heart"}></i>
+                      </button>
                     </div>
                     <div className="service-title">
                       {prof.profissao || 'Profissional'}
@@ -264,7 +359,7 @@ const Home = () => {
                     <div className="service-meta">
                       <span className="meta-item">
                         <i className="fas fa-map-marker-alt"></i>{' '}
-                        {prof.localizacao || 'Local não informado'}
+                        {prof.localizacao || prof.cidade || prof.user_cidade || 'Local não informado'}
                       </span>
                       <span className="meta-item">💰 Sob consulta</span>
                     </div>
@@ -421,12 +516,16 @@ const Home = () => {
                     </p>
                     <p>
                       <strong>Habilidades:</strong>{' '}
-                      {selectedProfessional.habilidades?.join(', ') ||
-                        'Não informadas'}
+                      {Array.isArray(selectedProfessional.habilidades)
+                        ? selectedProfessional.habilidades.join(', ')
+                        : selectedProfessional.habilidades || 'Não informadas'}
                     </p>
                     <p>
                       <strong>Localização:</strong>{' '}
-                      {selectedProfessional.localizacao || 'Não informada'}
+                      {selectedProfessional.localizacao ||
+                        selectedProfessional.cidade ||
+                        selectedProfessional.user_cidade ||
+                        'Não informada'}
                     </p>
                     {selectedProfessional.bio && (
                       <p>
@@ -451,6 +550,13 @@ const Home = () => {
             {toast.message}
           </div>
         )}
+
+        <FavoritesModal
+          isOpen={favoritesModalOpen}
+          onClose={() => setFavoritesModalOpen(false)}
+          userType="CLIENTE"
+          onFavoritesUpdated={carregarFavoritosIds}
+        />
       </div>
       <link
         href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@300;400;500;600;700;800&display=swap"

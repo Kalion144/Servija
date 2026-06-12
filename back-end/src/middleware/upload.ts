@@ -17,8 +17,22 @@ if (!fs.existsSync(uploadDir)) {
 
 // Configuração do storage do multer
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
+  destination: (req: any, file, cb) => {
+    let dest = uploadDir;
+    // Check if the original URL is for the profile endpoint
+    if (req.originalUrl && req.originalUrl.includes("/profile")) {
+      const userType = req.user?.userType || "CLIENTE";
+      if (userType === "CLIENTE") {
+        dest = path.join(uploadDir, "profile/cliente");
+      } else {
+        dest = path.join(uploadDir, "profile/profissional");
+      }
+    }
+    // Criar diretório se não existir
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(dest, { recursive: true });
+    }
+    cb(null, dest);
   },
   filename: (req, file, cb) => {
     // Gerar um nome único para o arquivo

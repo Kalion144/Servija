@@ -11,53 +11,45 @@ import {
   logoutUser,
   obterDadosUsuario,
   atualizarUsuario,
-  loginCliente,
-  loginProfissional,
   logoutCliente,
   logoutProfissional,
 } from '../services/api';
-
-interface Usuario {
-  id: number;
-  nome: string;
-  email: string;
-  tipo: 'CLIENTE' | 'PROFISSIONAL';
-  foto?: string | null;
-  telefone?: string | null;
-  cpf?: string | null;
-  endereco?: string | null;
-  cidade?: string | null;
-  estado?: string | null;
-  dataNascimento?: string | null;
-  bio?: string | null;
-  notificacoes?: string | null;
-  idioma?: string | null;
-  created_at: number;
-  perfilProfissional?: any;
-}
+import { User, RegisterData } from '../lib/types';
 
 interface AuthContextType {
-  usuario: Usuario | null;
+  usuario: User | null;
   loading: boolean;
-  login: (email: string, senha: string) => Promise<Usuario>;
-  cadastrar: (data: any) => Promise<Usuario>;
+  login: (email: string, senha: string) => Promise<User>;
+  cadastrar: (data: RegisterData) => Promise<User>;
   logout: () => Promise<void>;
-  updateUser: (data: Partial<Usuario>) => Promise<void>;
+  updateUser: (data: Partial<User>) => Promise<void>;
+  refreshUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [usuario, setUsuario] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshUser = async (): Promise<User | null> => {
+    try {
+      const response = await obterDadosUsuario();
+      if (response.usuario) {
+        setUsuario(response.usuario);
+        return response.usuario;
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao atualizar dados do usuário:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await obterDadosUsuario();
-        if (response.usuario) {
-          setUsuario(response.usuario);
-        }
+        await refreshUser();
       } catch (error) {
         console.error('Erro ao verificar autenticação:', error);
       } finally {
@@ -74,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return resposta.usuario;
   };
 
-  const cadastrar = async (data: any) => {
+  const cadastrar = async (data: RegisterData) => {
     const resposta = await cadastrarUser(data);
     setUsuario(resposta.usuario);
     return resposta.usuario;
@@ -96,12 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateUser = async (data: Partial<Usuario>) => {
+  const updateUser = async (data: Partial<User>) => {
     if ('id' in data) {
-      // If we're passing a full user object, just update state
-      setUsuario(prev => prev ? { ...prev, ...data } : data as Usuario);
+      setUsuario((prev) => (prev ? { ...prev, ...data } : (data as User)));
     } else {
-      // Otherwise, make API call
       const resposta = await atualizarUsuario(data);
       if (resposta.usuario) {
         setUsuario(resposta.usuario);
@@ -111,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ usuario, loading, login, cadastrar, logout, updateUser }}
+      value={{ usuario, loading, login, cadastrar, logout, updateUser, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

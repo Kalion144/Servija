@@ -17,6 +17,11 @@ export const users = sqliteTable("users", {
   bio: text("bio"),
   notificacoes: text("notificacoes"),
   idioma: text("idioma"),
+  media_estrelas: real("media_estrelas").default(0),
+  media_trabalho: real("media_trabalho").default(0),
+  media_tempo_execucao: real("media_tempo_execucao").default(0),
+  media_tempo_resposta: real("media_tempo_resposta").default(0),
+  total_avaliacoes: int("total_avaliacoes").default(0),
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -36,8 +41,20 @@ export const professionalProfiles = sqliteTable("professional_profiles", {
   cidade: text("cidade"),
   valor_hora: real("valor_hora"),
   media_estrelas: real("media_estrelas").default(0),
+  media_trabalho: real("media_trabalho").default(0),
+  media_tempo_execucao: real("media_tempo_execucao").default(0),
+  media_tempo_resposta: real("media_tempo_resposta").default(0),
   total_avaliacoes: int("total_avaliacoes").default(0),
   telefone: text("telefone"),
+});
+
+export const clientProfiles = sqliteTable("client_profiles", {
+  id: int("id").primaryKey({ autoIncrement: true }),
+  user_id: int("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  tipo_cliente: text("tipo_cliente").notNull(), // 'PF' | 'CONSTRUTORA' | 'IMOBILIARIA' | 'CONDOMINIO' | 'OUTRO'
+  preferencias_busca: text("preferencias_busca"),
 });
 
 export const professionalServices = sqliteTable("professional_services", {
@@ -109,8 +126,38 @@ export const ratings = sqliteTable("ratings", {
   professional_id: int("professional_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
+  avaliador_tipo: text("avaliador_tipo").notNull().$type<"CLIENTE" | "PROFISSIONAL">().default("CLIENTE"),
   estrelas: int("estrelas").notNull(),
+  estrelas_trabalho: int("estrelas_trabalho").notNull().default(0),
+  estrelas_tempo_execucao: int("estrelas_tempo_execucao").notNull().default(0),
+  estrelas_tempo_resposta: int("estrelas_tempo_resposta").notNull().default(0),
   comentario: text("comentario"),
+  created_at: int("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const favorites = sqliteTable("favorites", {
+  id: int("id").primaryKey({ autoIncrement: true }),
+  user_id: int("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  favorite_user_id: int("favorite_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  created_at: int("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export const favoriteServices = sqliteTable("favorite_services", {
+  id: int("id").primaryKey({ autoIncrement: true }),
+  user_id: int("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  favorite_service_id: int("favorite_service_id")
+    .notNull()
+    .references(() => professionalServices.id, { onDelete: "cascade" }),
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -121,12 +168,18 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [professionalProfiles.user_id],
   }),
+  clientProfile: one(clientProfiles, {
+    fields: [users.id],
+    references: [clientProfiles.user_id],
+  }),
   clientServices: many(professionalServices),
   sentProposalProfessionals: many(proposalProfessionals, {
     relationName: "professional",
   }),
   clientRatings: many(ratings, { relationName: "client" }),
   professionalRatings: many(ratings, { relationName: "professional" }),
+  sentFavorites: many(favorites, { relationName: "user" }),
+  receivedFavorites: many(favorites, { relationName: "favorite_user" }),
 }));
 
 export const professionalProfilesRelations = relations(
@@ -134,6 +187,16 @@ export const professionalProfilesRelations = relations(
   ({ one, many }) => ({
     user: one(users, {
       fields: [professionalProfiles.user_id],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const clientProfilesRelations = relations(
+  clientProfiles,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [clientProfiles.user_id],
       references: [users.id],
     }),
   }),
@@ -183,5 +246,18 @@ export const ratingsRelations = relations(ratings, ({ one }) => ({
     fields: [ratings.professional_id],
     references: [users.id],
     relationName: "professional",
+  }),
+}));
+
+export const favoritesRelations = relations(favorites, ({ one }) => ({
+  user: one(users, {
+    fields: [favorites.user_id],
+    references: [users.id],
+    relationName: "user",
+  }),
+  favoriteUser: one(users, {
+    fields: [favorites.favorite_user_id],
+    references: [users.id],
+    relationName: "favorite_user",
   }),
 }));

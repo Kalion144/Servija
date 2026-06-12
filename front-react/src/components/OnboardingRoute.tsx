@@ -1,12 +1,12 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-interface ProtectedRouteProps {
+interface OnboardingRouteProps {
   children: React.ReactNode;
   allowedType: 'CLIENTE' | 'PROFISSIONAL';
 }
 
-export default function ProtectedRoute({ children, allowedType }: ProtectedRouteProps) {
+export default function OnboardingRoute({ children, allowedType }: OnboardingRouteProps) {
   const { usuario, loading } = useAuth();
 
   if (loading) {
@@ -33,10 +33,10 @@ export default function ProtectedRoute({ children, allowedType }: ProtectedRoute
     );
   }
 
-  if (usuario.perfilIncompleto) {
+  if (!usuario.perfilIncompleto) {
     return (
       <Navigate
-        to={allowedType === 'CLIENTE' ? '/client/onboarding' : '/professional/onboarding'}
+        to={allowedType === 'CLIENTE' ? '/client/home' : '/professional/home'}
         replace
       />
     );

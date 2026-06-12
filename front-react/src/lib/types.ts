@@ -36,6 +36,13 @@ export type FiltroProposta = 'all' | 'aguardando' | 'aceita' | 'recusada';
 // USER
 // ==========================================
 
+export interface ClientProfile {
+  id: number;
+  user_id: number;
+  tipo_cliente: string;
+  preferencias_busca?: string | null;
+}
+
 export interface User {
   id: number;
   nome: string;
@@ -51,9 +58,19 @@ export interface User {
   bio?: string | null;
   notificacoes?: string | null;
   idioma?: string | null;
+  media_estrelas?: number | null;
+  media_trabalho?: number | null;
+  media_tempo_execucao?: number | null;
+  media_tempo_resposta?: number | null;
+  total_avaliacoes?: number | null;
   created_at: number;
-  perfilProfissional?: any;
+  perfilProfissional?: ProfessionalProfile | null;
+  perfilCliente?: ClientProfile | null;
+  perfilIncompleto?: boolean;
+  missingFields?: string[];
 }
+
+export type OnboardingStep = 'dados' | 'identidade' | 'documentos' | 'especifico';
 
 // ==========================================
 // AUTH
@@ -84,14 +101,19 @@ export interface AuthResponse {
 export interface ProfessionalProfile {
   id: number;
   user_id: number;
-
+  profissao?: string | null;
   descricao?: string | null;
   experiencia?: string | null;
-
+  habilidades?: string | null;
   cidade?: string | null;
   telefone?: string | null;
-
+  localizacao?: string | null;
   valor_hora?: number | null;
+  media_estrelas?: number | null;
+  media_trabalho?: number | null;
+  media_tempo_execucao?: number | null;
+  media_tempo_resposta?: number | null;
+  total_avaliacoes?: number | null;
 }
 
 export interface ProfessionalService {
@@ -145,8 +167,12 @@ export interface Rating {
 
   client_id: number;
   professional_id: number;
+  avaliador_tipo?: 'CLIENTE' | 'PROFISSIONAL';
 
   estrelas: number;
+  estrelas_trabalho?: number;
+  estrelas_tempo_execucao?: number;
+  estrelas_tempo_resposta?: number;
 
   comentario?: string | null;
 }

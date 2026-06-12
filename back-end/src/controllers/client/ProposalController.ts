@@ -4,6 +4,8 @@ import {
   professionalServices,
   proposalProfessionals,
   users,
+  professionalProfiles,
+  ratings,
 } from "../../db/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -31,8 +33,16 @@ export class ProposalClientController {
             id: users.id,
             nome: users.nome,
             foto: users.foto,
+            bio: users.bio,
+            profissao: professionalProfiles.profissao,
+            experiencia: professionalProfiles.experiencia,
+            localizacao: professionalProfiles.localizacao,
+            habilidades: professionalProfiles.habilidades,
+            media_estrelas: professionalProfiles.media_estrelas,
+            total_avaliacoes: professionalProfiles.total_avaliacoes,
           },
           servico: professionalServices,
+          avaliacao: ratings,
         })
         .from(proposalProfessionals)
         .innerJoin(
@@ -40,11 +50,32 @@ export class ProposalClientController {
           eq(proposalProfessionals.service_id, professionalServices.id),
         )
         .innerJoin(users, eq(proposalProfessionals.professional_id, users.id))
+        .leftJoin(
+          professionalProfiles,
+          eq(professionalProfiles.user_id, users.id),
+        )
+        .leftJoin(
+          ratings,
+          eq(ratings.proposal_professional_id, proposalProfessionals.id),
+        )
         .where(eq(professionalServices.client_id, user.userId))
         .orderBy(desc(proposalProfessionals.created_at));
 
+      // Process habilidades
+      const processedPropostas = propostas.map((proposta) => ({
+        ...proposta,
+        profissional: {
+          ...proposta.profissional,
+          habilidades: proposta.profissional.habilidades
+            ? typeof proposta.profissional.habilidades === "string"
+              ? JSON.parse(proposta.profissional.habilidades)
+              : proposta.profissional.habilidades
+            : null,
+        },
+      }));
+
       console.log("✅", propostas.length, "propostas recebidas");
-      res.json({ propostas });
+      res.json({ propostas: processedPropostas });
     } catch (error) {
       console.error("❌ Erro ao listar propostas recebidas:", error);
       res.status(500).json({ erro: "Erro interno do servidor" });

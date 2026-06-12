@@ -7,6 +7,59 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "seu-segredo-jwt";
 
+async function checkCompleteness(user: any) {
+  const missingFields: string[] = [];
+  if (!user.foto) missingFields.push("foto");
+  if (!user.telefone) missingFields.push("telefone");
+  if (!user.cpf) missingFields.push("cpf");
+  if (!user.cidade) missingFields.push("cidade");
+  if (!user.estado) missingFields.push("estado");
+
+  let profile = null;
+  if (user.tipo === "PROFISSIONAL") {
+    const [profProfile] = await db
+      .select()
+      .from(professionalProfiles)
+      .where(eq(professionalProfiles.user_id, user.id));
+    
+    profile = profProfile || null;
+    if (!profProfile) {
+      missingFields.push("profissao", "experiencia", "habilidades");
+    } else {
+      if (!profProfile.profissao) missingFields.push("profissao");
+      if (!profProfile.experiencia) missingFields.push("experiencia");
+      if (!profProfile.habilidades) missingFields.push("habilidades");
+    }
+  } else if (user.tipo === "CLIENTE") {
+    const { clientProfiles } = await import("../db/schema.js");
+    const [cliProfile] = await db
+      .select()
+      .from(clientProfiles)
+      .where(eq(clientProfiles.user_id, user.id));
+
+    profile = cliProfile || null;
+    if (!cliProfile) {
+      missingFields.push("tipo_cliente", "preferencias_busca");
+    } else {
+      if (!cliProfile.tipo_cliente) missingFields.push("tipo_cliente");
+      if (!cliProfile.preferencias_busca) missingFields.push("preferencias_busca");
+    }
+  }
+
+  // Console log indicating incomplete fields for developers
+  if (missingFields.length > 0) {
+    console.log(`⚠️ [CompletenessCheck] Usuário ${user.nome} (ID: ${user.id}, Tipo: ${user.tipo}) possui perfil INCOMPLETO. Faltam: ${missingFields.join(", ")}`);
+  } else {
+    console.log(`✅ [CompletenessCheck] Usuário ${user.nome} (ID: ${user.id}) possui perfil completo.`);
+  }
+
+  return {
+    perfilIncompleto: missingFields.length > 0,
+    missingFields,
+    profile,
+  };
+}
+
 export class AuthController {
   static async register(req: Request, res: Response) {
     const { nome, email, senha, tipo, foto } = req.body;
@@ -56,9 +109,17 @@ export class AuthController {
         .from(users)
         .where(eq(users.id, newUser.id));
 
+      const completeness = await checkCompleteness(userData);
+
       const response = {
         mensagem: "Usuário cadastrado com sucesso",
-        usuario: userData,
+        usuario: {
+          ...userData,
+          perfilProfissional: tipo === "PROFISSIONAL" ? completeness.profile : null,
+          perfilCliente: tipo === "CLIENTE" ? completeness.profile : null,
+          perfilIncompleto: completeness.perfilIncompleto,
+          missingFields: completeness.missingFields,
+        },
       };
 
       console.log("✅ [register] Resposta de registro:", JSON.stringify(response, null, 2));
@@ -115,19 +176,16 @@ export class AuthController {
         { expiresIn: "3h" },
       );
 
-      const [profile] =
-        user.tipo === "PROFISSIONAL"
-          ? await db
-              .select()
-              .from(professionalProfiles)
-              .where(eq(professionalProfiles.user_id, user.id))
-          : [null];
+      const completeness = await checkCompleteness(user);
 
       const response = {
         mensagem: "Login realizado com sucesso",
         usuario: {
           ...user,
-          perfilProfissional: profile,
+          perfilProfissional: user.tipo === "PROFISSIONAL" ? completeness.profile : null,
+          perfilCliente: user.tipo === "CLIENTE" ? completeness.profile : null,
+          perfilIncompleto: completeness.perfilIncompleto,
+          missingFields: completeness.missingFields,
         },
       };
 
@@ -168,20 +226,17 @@ export class AuthController {
         return res.status(404).json({ erro: "Usuário não encontrado" });
       }
 
-      const [profile] =
-        user.tipo === "PROFISSIONAL"
-          ? await db
-              .select()
-              .from(professionalProfiles)
-              .where(eq(professionalProfiles.user_id, user.id))
-          : [null];
+      const completeness = await checkCompleteness(user);
 
       console.log("✅ [me] Usuário encontrado:", { id: user.id, nome: user.nome });
 
       res.json({
         usuario: {
           ...user,
-          perfilProfissional: profile,
+          perfilProfissional: user.tipo === "PROFISSIONAL" ? completeness.profile : null,
+          perfilCliente: user.tipo === "CLIENTE" ? completeness.profile : null,
+          perfilIncompleto: completeness.perfilIncompleto,
+          missingFields: completeness.missingFields,
         },
       });
     } catch (error) {
@@ -192,6 +247,172 @@ export class AuthController {
       });
       const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
       res.status(500).json({ erro: mensagemErro });
+    }
+  }
+
+  static async updateOnboarding(req: Request, res: Response) {
+    const userId = req.user?.userId;
+    const {
+      foto,
+      telefone,
+      cpf,
+      cidade,
+      estado,
+      // Profissional fields
+      profissao,
+      experiencia,
+      habilidades,
+      // Cliente fields
+      tipo_cliente,
+      preferencias_busca,
+    } = req.body;
+
+    const habilidadesStr = Array.isArray(habilidades)
+      ? JSON.stringify(habilidades)
+      : habilidades;
+    const preferenciasStr = Array.isArray(preferencias_busca)
+      ? JSON.stringify(preferencias_busca)
+      : preferencias_busca;
+
+    try {
+      if (!userId || !Number.isFinite(userId)) {
+        return res.status(401).json({ erro: "Usuário não autenticado" });
+      }
+
+      const userUpdate: any = {};
+      if (foto) userUpdate.foto = foto;
+      if (telefone) userUpdate.telefone = telefone;
+      if (cpf) userUpdate.cpf = cpf;
+      if (cidade) userUpdate.cidade = cidade;
+      if (estado) userUpdate.estado = estado;
+
+      if (Object.keys(userUpdate).length > 0) {
+        await db.update(users).set(userUpdate).where(eq(users.id, userId));
+      }
+
+      const [user] = await db.select().from(users).where(eq(users.id, userId));
+
+      if (user.tipo === "PROFISSIONAL") {
+        const profData: Record<string, string | undefined> = {};
+        if (profissao) profData.profissao = profissao;
+        if (experiencia) profData.experiencia = experiencia;
+        if (habilidadesStr) profData.habilidades = habilidadesStr;
+        if (telefone) profData.telefone = telefone;
+        if (cidade) profData.cidade = cidade;
+        if (cidade && estado) profData.localizacao = `${cidade} - ${estado}`;
+
+        if (Object.keys(profData).length > 0) {
+          const [existing] = await db
+            .select()
+            .from(professionalProfiles)
+            .where(eq(professionalProfiles.user_id, userId));
+
+          if (existing) {
+            await db
+              .update(professionalProfiles)
+              .set(profData)
+              .where(eq(professionalProfiles.user_id, userId));
+          } else {
+            await db.insert(professionalProfiles).values({
+              user_id: userId,
+              ...profData,
+            });
+          }
+        }
+      } else if (user.tipo === "CLIENTE") {
+        const clientData: Record<string, string | undefined> = {};
+        if (tipo_cliente) clientData.tipo_cliente = tipo_cliente;
+        if (preferenciasStr) clientData.preferencias_busca = preferenciasStr;
+
+        if (Object.keys(clientData).length > 0) {
+          const { clientProfiles } = await import("../db/schema.js");
+          const [existing] = await db
+            .select()
+            .from(clientProfiles)
+            .where(eq(clientProfiles.user_id, userId));
+
+          if (existing) {
+            await db
+              .update(clientProfiles)
+              .set(clientData)
+              .where(eq(clientProfiles.user_id, userId));
+          } else {
+            await db.insert(clientProfiles).values({
+              user_id: userId,
+              tipo_cliente: tipo_cliente || "PF",
+              ...clientData,
+            });
+          }
+        }
+      }
+
+      const [updatedUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+
+      const completeness = await checkCompleteness(updatedUser);
+
+      res.status(200).json({
+        mensagem: "Onboarding atualizado com sucesso",
+        usuario: {
+          ...updatedUser,
+          perfilProfissional:
+            updatedUser.tipo === "PROFISSIONAL" ? completeness.profile : null,
+          perfilCliente:
+            updatedUser.tipo === "CLIENTE" ? completeness.profile : null,
+          perfilIncompleto: completeness.perfilIncompleto,
+          missingFields: completeness.missingFields,
+        },
+      });
+    } catch (error) {
+      console.error("❌ [updateOnboarding] Erro:", error);
+      res.status(500).json({ erro: "Erro ao atualizar onboarding" });
+    }
+  }
+
+  static async uploadProfilePhoto(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      if (!userId || !Number.isFinite(userId)) {
+        return res.status(401).json({ erro: "Usuário não autenticado" });
+      }
+
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ erro: "Nenhuma foto enviada" });
+      }
+
+      const userType = req.user?.userType || "CLIENTE";
+      const subdir =
+        userType === "CLIENTE" ? "profile/cliente" : "profile/profissional";
+      const fotoUrl = `/uploads/${subdir}/${file.filename}`;
+
+      await db.update(users).set({ foto: fotoUrl }).where(eq(users.id, userId));
+
+      const [updatedUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
+
+      const completeness = await checkCompleteness(updatedUser);
+
+      res.status(201).json({
+        mensagem: "Foto enviada com sucesso",
+        url: fotoUrl,
+        usuario: {
+          ...updatedUser,
+          perfilProfissional:
+            updatedUser.tipo === "PROFISSIONAL" ? completeness.profile : null,
+          perfilCliente:
+            updatedUser.tipo === "CLIENTE" ? completeness.profile : null,
+          perfilIncompleto: completeness.perfilIncompleto,
+          missingFields: completeness.missingFields,
+        },
+      });
+    } catch (error) {
+      console.error("❌ [uploadProfilePhoto] Erro:", error);
+      res.status(500).json({ erro: "Erro ao enviar foto" });
     }
   }
 
