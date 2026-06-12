@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type ErrorRequestHandler } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
@@ -57,17 +57,22 @@ app.use("/client", clientRoutes);
 app.use("/api/upload", uploadRoutes);
 
 // Middleware de tratamento de erros
-app.use((err, req, res, next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const timestamp = new Date().toISOString();
   console.error(
     `\n❌ [${timestamp}] Erro na requisição ${req.method} ${req.url}:`,
   );
-  console.error(err.stack || err);
+  console.error(err instanceof Error ? err.stack : err);
 
   res.status(500).json({
     erro: "Erro interno do servidor",
-    detalhes: process.env.NODE_ENV === "development" ? err.message : undefined,
+    detalhes:
+      process.env.NODE_ENV === "development" && err instanceof Error
+        ? err.message
+        : undefined,
   });
-});
+};
+
+app.use(errorHandler);
 
 export default app;
