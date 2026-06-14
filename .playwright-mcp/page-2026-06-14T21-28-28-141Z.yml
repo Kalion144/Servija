@@ -1,0 +1,33 @@
+- generic [active] [ref=e1]:
+  - text: Servijá Rápido. fácil. resolvido.
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: Servijá.
+      - heading "Entrar - Profissional" [level=2] [ref=e7]
+      - paragraph [ref=e8]: Digite seu e-mail e senha para acessar sua conta
+    - generic [ref=e9]:
+      - generic [ref=e10]: 
+      - textbox "Seu e-mail" [ref=e11]
+    - generic [ref=e12]:
+      - generic [ref=e13]: 
+      - textbox "Sua senha" [ref=e14]
+    - link "Esqueceu a senha?" [ref=e16] [cursor=pointer]:
+      - /url: "#"
+    - button " Entrar" [ref=e17] [cursor=pointer]:
+      - generic [ref=e18]: 
+      - text: Entrar
+    - generic [ref=e19]:
+      - separator [ref=e20]
+      - generic [ref=e21]: ou
+      - separator [ref=e22]
+    - button " Continuar com Google" [ref=e23] [cursor=pointer]:
+      - generic [ref=e24]: 
+      - text: Continuar com Google
+    - generic [ref=e25]:
+      - text: Não tem uma conta?
+      - link "Criar conta" [ref=e26] [cursor=pointer]:
+        - /url: /professional/cadastro
+    - generic [ref=e27]:
+      - text: É cliente?
+      - link "Acessar área do cliente" [ref=e28] [cursor=pointer]:
+        - /url: /client/login

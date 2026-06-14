@@ -1,0 +1,54 @@
+- generic [ref=e1]:
+  - text: Servijá Rápido. fácil. resolvido.
+  - generic [ref=e32]:
+    - generic [ref=e33]:
+      - generic [ref=e34]: Servijá.
+      - heading "Complete seu perfil" [level=2] [ref=e35]
+      - paragraph [ref=e36]: "Etapa 1 de 4: Dados pessoais"
+    - generic [ref=e62]: Envie uma foto de perfil
+    - generic [ref=e42]:
+      - generic [ref=e45] [cursor=pointer]:
+        - generic [ref=e46]: 
+        - text: Adicionar foto
+      - generic [ref=e47]:
+        - generic [ref=e48]: Telefone
+        - textbox "(00) 00000-0000" [ref=e49]: (61) 99999-9999
+      - generic [ref=e50]:
+        - generic [ref=e51]: CPF
+        - textbox "000.000.000-00" [ref=e52]: 111.111.111-11
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - generic [ref=e55]: Cidade
+          - textbox "Sua cidade" [ref=e56]: Brasília
+        - generic [ref=e57]:
+          - generic [ref=e58]: Estado
+          - combobox [ref=e59]:
+            - option "UF"
+            - option "AC"
+            - option "AL"
+            - option "AP"
+            - option "AM"
+            - option "BA"
+            - option "CE"
+            - option "DF" [selected]
+            - option "ES"
+            - option "GO"
+            - option "MA"
+            - option "MT"
+            - option "MS"
+            - option "MG"
+            - option "PA"
+            - option "PB"
+            - option "PR"
+            - option "PE"
+            - option "PI"
+            - option "RJ"
+            - option "RN"
+            - option "RS"
+            - option "RO"
+            - option "RR"
+            - option "SC"
+            - option "SP"
+            - option "SE"
+            - option "TO"
+    - button "Continuar" [active] [ref=e61] [cursor=pointer]
