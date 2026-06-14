@@ -5,8 +5,9 @@ import {
   professionalProfiles,
   professionalServices,
   ratings,
+  subscriptions,
 } from "../../db/schema.js";
-import { eq, and, desc, or, like, type SQL } from "drizzle-orm";
+import { eq, and, desc, or, like, sql, type SQL } from "drizzle-orm";
 
 export class ProfessionalController {
   static async listar(req: Request, res: Response) {
@@ -47,6 +48,7 @@ export class ProfessionalController {
           foto: users.foto,
           tipo: users.tipo,
           bio: users.bio,
+          verified: users.verified,
           user_cidade: users.cidade,
           user_estado: users.estado,
           profissao: professionalProfiles.profissao,
@@ -57,17 +59,25 @@ export class ProfessionalController {
           valor_hora: professionalProfiles.valor_hora,
           avaliacao: professionalProfiles.media_estrelas,
           total_avaliacoes: professionalProfiles.total_avaliacoes,
+          plan: subscriptions.plan,
         })
         .from(users)
+        .leftJoin(professionalProfiles, eq(professionalProfiles.user_id, users.id))
         .leftJoin(
-          professionalProfiles,
-          eq(professionalProfiles.user_id, users.id),
+          subscriptions,
+          and(eq(subscriptions.user_id, users.id), eq(subscriptions.user_type, "PROFISSIONAL")),
         )
-        .where(and(...conditions));
+        .where(and(...conditions))
+        .orderBy(
+          desc(sql`CASE WHEN ${subscriptions.plan} = 'PREMIUM' THEN 2 WHEN ${subscriptions.plan} = 'PRO' THEN 1 ELSE 0 END`),
+          desc(professionalProfiles.media_estrelas),
+        );
 
       // Process habilidades: parse JSON string to array if present
       const processedProfissionais = profissionais.map((prof) => ({
         ...prof,
+        plan: prof.plan ?? "FREE",
+        verified: prof.verified === 1,
         habilidades: prof.habilidades
           ? typeof prof.habilidades === "string"
             ? JSON.parse(prof.habilidades)

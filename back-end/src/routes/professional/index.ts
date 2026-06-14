@@ -7,8 +7,11 @@ import { ProfessionalRatingController } from "../../controllers/professional/rat
 import { ConversationController } from "../../controllers/ConversationController.js";
 import { authenticateToken } from "../../middleware/authMiddleware.js";
 import { SubscriptionController } from "../../controllers/SubscriptionController.js";
+import { MetricsController } from "../../controllers/professional/metricsController.js";
 
 const router = Router();
+
+router.get("/metrics", authenticateToken, MetricsController.obter);
 
 router.get(
   "/subscription/status",

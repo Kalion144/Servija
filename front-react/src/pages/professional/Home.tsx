@@ -26,6 +26,7 @@ const Home = () => {
   const [carregando, setCarregando] = useState(false);
   const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
   const [currentPlan, setCurrentPlan] = useState<PlanId>('FREE');
+  const [dailyContacts, setDailyContacts] = useState({ current: 0, max: 3 });
   const toastTimeoutRef = useRef(null);
 
   const showToastMessage = (message) => {
@@ -69,6 +70,12 @@ const Home = () => {
       try {
         const status = await obterStatusAssinatura(true);
         if (status.plan) setCurrentPlan(status.plan);
+        if (status.currentDailyContacts !== undefined) {
+          setDailyContacts({
+            current: status.currentDailyContacts,
+            max: status.maxDailyContacts ?? 3,
+          });
+        }
       } catch (error) {
         console.error(error);
       }
@@ -150,18 +157,10 @@ const Home = () => {
 
   const announcements = [
     {
-      id: 2,
-      title: '📊 Relatórios Avançados',
-      description: 'Acompanhe suas métricas em tempo real!',
-      subText: 'Disponível para todos',
-      gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-      icon: 'fa-chart-line',
-    },
-    {
       id: 3,
       title: '💬 Chat em Tempo Real',
       description: 'Comunique-se diretamente com os clientes!',
-      subText: 'Novidade exclusiva',
+      subText: 'Disponível para planos Pro e Premium',
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       icon: 'fa-comments',
     },
@@ -203,40 +202,36 @@ const Home = () => {
     .announcement-card h4 { margin-bottom: 10px; font-size: 18px; display: flex; align-items: center; gap: 10px; }
     .announcement-card p { margin-bottom: 6px; font-size: 14px; opacity: 0.95; }
     .announcement-subtext { font-size: 12px; opacity: 0.85; font-style: italic; }
-    .premium-card-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-    .premium-card-header h4 { margin-bottom: 0; }
-    .premium-toggle-icon { font-size: 14px; transition: transform 0.3s; opacity: 0.9; }
-    .premium-toggle-icon.open { transform: rotate(180deg); }
-    .premium-collapsed-info p { margin-bottom: 6px; }
-    .plans-expanded { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; }
-    .inner-plan {
-      background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
-      border-radius: 16px; padding: 18px; border: 1px solid rgba(255,255,255,0.25);
-      position: relative; cursor: default;
+    .dash-card {
+      background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+      border-radius: 24px; padding: 22px; color: white; cursor: pointer;
+      box-shadow: 0 8px 28px rgba(109,40,217,0.35);
+      transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;
     }
-    .inner-plan.inner-free { background: rgba(255,255,255,0.12); }
-    .inner-plan.inner-pro { background: rgba(255,255,255,0.18); }
-    .inner-plan.inner-premium { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.4); }
-    .inner-plan-badge {
-      position: absolute; top: -10px; right: 16px;
-      background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700;
-      padding: 4px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px;
+    .dash-card:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(109,40,217,0.45); }
+    .dash-card-glow {
+      position: absolute; top: -30px; right: -30px; width: 120px; height: 120px;
+      background: rgba(255,255,255,0.07); border-radius: 50%;
     }
-    .inner-plan-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-    .inner-plan-nome { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; }
-    .inner-plan-preco { font-size: 22px; font-weight: 800; text-align: right; }
-    .inner-plan-preco-sub { font-size: 12px; opacity: 0.85; text-align: right; }
-    .inner-plan-beneficios { list-style: none; margin: 0 0 14px 0; padding: 0; }
-    .inner-plan-beneficios li {
-      font-size: 13px; padding: 4px 0; display: flex; align-items: center; gap: 8px; opacity: 0.95;
+    .dash-card-glow2 {
+      position: absolute; bottom: -20px; left: 20px; width: 80px; height: 80px;
+      background: rgba(255,255,255,0.05); border-radius: 50%;
     }
-    .inner-plan-beneficios li i { font-size: 12px; opacity: 0.85; }
-    .inner-plan-btn {
-      width: 100%; padding: 10px 16px; border: none; border-radius: 12px;
-      background: white; color: #ea580c; font-weight: 700; font-size: 14px;
-      cursor: pointer; transition: 0.2s;
-    }
-    .inner-plan-btn:hover { background: #fff7ed; transform: translateY(-1px); }
+    .dash-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .dash-card-icon { width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .dash-card-badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .dash-card-title { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+    .dash-card-desc { font-size: 13px; opacity: 0.85; margin-bottom: 16px; line-height: 1.4; }
+    .dash-kpi-row { display: flex; gap: 10px; }
+    .dash-kpi { flex: 1; background: rgba(255,255,255,0.12); border-radius: 12px; padding: 10px 12px; }
+    .dash-kpi-val { font-size: 18px; font-weight: 800; }
+    .dash-kpi-lbl { font-size: 10px; opacity: 0.75; margin-top: 2px; }
+    .dash-btn { margin-top: 14px; width: 100%; background: white; color: #6d28d9; border: none; border-radius: 12px; padding: 11px; font-size: 13px; font-weight: 800; cursor: pointer; transition: .2s; display: flex; align-items: center; justify-content: center; gap: 7px; }
+    .dash-btn:hover { background: #f5f3ff; }
+    .contacts-widget { display: flex; align-items: center; gap: 10px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; padding: 8px 14px; font-size: 13px; color: #92400e; }
+    .contacts-bar-wrap { width: 80px; height: 6px; background: #fde8cc; border-radius: 99px; overflow: hidden; }
+    .contacts-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #f97316, #ea580c); transition: width 0.4s; }
+    .contacts-bar.full { background: #dc2626; }
     .success-toast { position: fixed; top: 80px; right: 20px; padding: 14px 24px; border-radius: 40px; color: white; font-weight: 600; z-index: 9999; background: #f97316; box-shadow: 0 4px 15px rgba(249, 115, 22, 0.35); animation: fadeInOut 3s ease forwards; }
     @keyframes fadeInOut { 0% { opacity: 0; transform: translateX(20px); } 15% { opacity: 1; transform: translateX(0); } 85% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; transform: translateX(20px); visibility: hidden; } }
     @media (max-width: 1024px) { 
@@ -287,6 +282,21 @@ const Home = () => {
           >
             <i className="fas fa-user"></i>
           </button>
+          <div className="contacts-widget" title={`Você iniciou ${dailyContacts.current} de ${dailyContacts.max === 999 ? '∞' : dailyContacts.max} contatos hoje`}>
+            <i className="fas fa-comments" />
+            <span>
+              <strong>{dailyContacts.current}</strong>
+              /{dailyContacts.max === 999 ? '∞' : dailyContacts.max} hoje
+            </span>
+            {dailyContacts.max !== 999 && (
+              <div className="contacts-bar-wrap">
+                <div
+                  className={`contacts-bar${dailyContacts.current >= dailyContacts.max ? ' full' : ''}`}
+                  style={{ width: `${Math.min(100, (dailyContacts.current / dailyContacts.max) * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
           <button className="icon-btn" onClick={handleLogout} title="Sair">
             <i className="fas fa-sign-out-alt"></i>
           </button>
@@ -464,6 +474,35 @@ const Home = () => {
             </span>
           </div>
           <div className="announcements-grid">
+            {/* Dashboard card */}
+            <div className="dash-card" onClick={() => navigate('/professional/dashboard')}>
+              <div className="dash-card-glow" />
+              <div className="dash-card-glow2" />
+              <div className="dash-card-header">
+                <div className="dash-card-icon"><i className="fas fa-chart-line" /></div>
+                <span className="dash-card-badge">Tempo real</span>
+              </div>
+              <div className="dash-card-title">📊 Relatórios Avançados</div>
+              <div className="dash-card-desc">
+                Acompanhe ganhos, clientes atendidos, avaliações e muito mais.
+              </div>
+              <div className="dash-kpi-row">
+                <div className="dash-kpi">
+                  <div className="dash-kpi-val">
+                    {dailyContacts.current}/{dailyContacts.max === 999 ? '∞' : dailyContacts.max}
+                  </div>
+                  <div className="dash-kpi-lbl">contatos hoje</div>
+                </div>
+                <div className="dash-kpi">
+                  <div className="dash-kpi-val">{currentPlan}</div>
+                  <div className="dash-kpi-lbl">plano ativo</div>
+                </div>
+              </div>
+              <button className="dash-btn" onClick={(e) => { e.stopPropagation(); navigate('/professional/dashboard'); }}>
+                <i className="fas fa-arrow-right" /> Ver relatório completo
+              </button>
+            </div>
+
             <PremiumPlansCard
               currentPlan={currentPlan}
               onSubscribe={handleAssinarPlano}

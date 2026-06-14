@@ -22,6 +22,7 @@ export const users = sqliteTable("users", {
   media_tempo_execucao: real("media_tempo_execucao").default(0),
   media_tempo_resposta: real("media_tempo_resposta").default(0),
   total_avaliacoes: int("total_avaliacoes").default(0),
+  verified: int("verified").default(0),
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),

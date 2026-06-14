@@ -216,13 +216,22 @@ const Home = () => {
     .view-all-btn { font-size: 14px; color: #3b82f6; font-weight: 600; background: none; border: none; cursor: pointer; transition: 0.2s; }
     .view-all-btn:hover { color: #2563eb; }
     .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-    .professional-card { background: white; padding: 22px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid #e6eef8; }
+    .professional-card { background: white; padding: 22px; border-radius: 20px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 12px rgba(0,0,0,0.05); border: 1px solid #e6eef8; position: relative; }
     .professional-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(59, 130, 246, 0.12); border-color: #93c5fd; }
+    .professional-card.is-premium-pro { border-color: #c4b5fd; box-shadow: 0 2px 12px rgba(124,58,237,0.08); }
+    .professional-card.is-premium-pro:hover { border-color: #7c3aed; box-shadow: 0 10px 25px rgba(124,58,237,0.15); }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .prof-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.4rem; }
-    .prof-info { flex: 1; margin-left: 14px; }
+    .prof-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.4rem; flex-shrink: 0; }
+    .prof-avatar.avatar-pro { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+    .prof-avatar.avatar-premium { background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); }
+    .prof-info { flex: 1; margin-left: 14px; min-width: 0; }
+    .prof-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .prof-name { font-weight: 700; font-size: 17px; color: #0f172a; }
-    .rating { color: #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 4px; font-size: 14px; }
+    .verified-badge { display: inline-flex; align-items: center; gap: 3px; background: #eff6ff; color: #2563eb; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid #bfdbfe; white-space: nowrap; }
+    .plan-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+    .plan-badge.pro { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+    .plan-badge.premium { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
+    .rating { color: #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 4px; font-size: 14px; margin-top: 3px; }
     .service-title { font-weight: 700; margin-bottom: 10px; color: #3b82f6; font-size: 15px; }
     .service-description { color: #64748b; margin-bottom: 15px; line-height: 1.5; font-size: 14px; }
     .service-meta { display: flex; justify-content: space-between; font-size: 13px; color: #4b5563; }
@@ -383,19 +392,30 @@ const Home = () => {
                 prestadores.map((prof) => (
                   <div
                     key={prof.id}
-                    className="professional-card"
+                    className={`professional-card${prof.plan === 'PREMIUM' ? ' is-premium-pro' : ''}`}
                     onClick={() => openModal(prof.id)}
                   >
                     <div className="card-header">
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <div className="prof-avatar">
+                      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                        <div className={`prof-avatar${prof.plan === 'PRO' ? ' avatar-pro' : prof.plan === 'PREMIUM' ? ' avatar-premium' : ''}`}>
                           {prof.nome.charAt(0).toUpperCase()}
                         </div>
                         <div className="prof-info">
-                          <div className="prof-name">{prof.nome}</div>
-                          <div className="rating">
-                            <i className="fas fa-star"></i>{' '}
-                            {prof.avaliacao || 'Novo'}
+                          <div className="prof-name-row">
+                            <span className="prof-name">{prof.nome}</span>
+                            {prof.verified && (
+                              <span className="verified-badge">
+                                <i className="fas fa-check-circle" /> Verificado
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <div className="rating">
+                              <i className="fas fa-star" />{' '}
+                              {prof.avaliacao ? Number(prof.avaliacao).toFixed(1) : 'Novo'}
+                            </div>
+                            {prof.plan === 'PRO' && <span className="plan-badge pro">💼 Pro</span>}
+                            {prof.plan === 'PREMIUM' && <span className="plan-badge premium">💎 Premium</span>}
                           </div>
                         </div>
                       </div>

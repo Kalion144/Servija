@@ -103,8 +103,9 @@ export class SubscriptionController {
 
       res.json({ url: session.url, sessionId: session.id });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ erro: "Erro ao criar sessão de checkout" });
+      console.error("Stripe checkout error:", error);
+      const msg = error instanceof Error ? error.message : "Erro ao criar sessão de checkout";
+      res.status(500).json({ erro: msg });
     }
   }
 
