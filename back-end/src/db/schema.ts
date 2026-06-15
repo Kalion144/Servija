@@ -1,4 +1,4 @@
-import { sqliteTable, int, text, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, int, text, real, index } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
 export const users = sqliteTable("users", {
@@ -25,6 +25,11 @@ export const users = sqliteTable("users", {
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxUsersTipo: index("idx_users_tipo").on(table.tipo),
+    idxUsersCidadeEstado: index("idx_users_cidade_estado").on(table.cidade, table.estado),
+  };
 });
 
 export const professionalProfiles = sqliteTable("professional_profiles", {
@@ -46,6 +51,12 @@ export const professionalProfiles = sqliteTable("professional_profiles", {
   media_tempo_resposta: real("media_tempo_resposta").default(0),
   total_avaliacoes: int("total_avaliacoes").default(0),
   telefone: text("telefone"),
+}, (table) => {
+  return {
+    idxProfProfilesUserId: index("idx_prof_profiles_user_id").on(table.user_id),
+    idxProfProfilesProfissao: index("idx_prof_profiles_profissao").on(table.profissao),
+    idxProfProfilesLocalizacao: index("idx_prof_profiles_localizacao").on(table.localizacao),
+  };
 });
 
 export const clientProfiles = sqliteTable("client_profiles", {
@@ -55,6 +66,10 @@ export const clientProfiles = sqliteTable("client_profiles", {
     .references(() => users.id, { onDelete: "cascade" }),
   tipo_cliente: text("tipo_cliente").notNull(), // 'PF' | 'CONSTRUTORA' | 'IMOBILIARIA' | 'CONDOMINIO' | 'OUTRO'
   preferencias_busca: text("preferencias_busca"),
+}, (table) => {
+  return {
+    idxCliProfilesUserId: index("idx_cli_profiles_user_id").on(table.user_id),
+  };
 });
 
 export const professionalServices = sqliteTable("professional_services", {
@@ -107,6 +122,14 @@ export const professionalServices = sqliteTable("professional_services", {
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxServicesClientId: index("idx_services_client_id").on(table.client_id),
+    idxServicesStatus: index("idx_services_status").on(table.status),
+    idxServicesCategoriaSubcategoria: index("idx_services_categoria_subcategoria").on(table.categoria, table.subcategoria),
+    idxServicesLocalizacao: index("idx_services_localizacao").on(table.localizacao),
+    idxServicesCreatedAt: index("idx_services_created_at").on(table.created_at),
+  };
 });
 
 export const conversations = sqliteTable("conversations", {
@@ -137,6 +160,12 @@ export const conversations = sqliteTable("conversations", {
   updated_at: int("updated_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxConversationsServiceId: index("idx_conversations_service_id").on(table.service_id),
+    idxConversationsClientId: index("idx_conversations_client_id").on(table.client_id),
+    idxConversationsProfessionalId: index("idx_conversations_professional_id").on(table.professional_id),
+  };
 });
 
 export const messages = sqliteTable("messages", {
@@ -157,6 +186,11 @@ export const messages = sqliteTable("messages", {
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxMessagesConversationId: index("idx_messages_conversation_id").on(table.conversation_id),
+    idxMessagesCreatedAt: index("idx_messages_created_at").on(table.created_at),
+  };
 });
 
 export const proposalProfessionals = sqliteTable("proposal_professionals", {
@@ -185,6 +219,12 @@ export const proposalProfessionals = sqliteTable("proposal_professionals", {
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxProposalsServiceId: index("idx_proposals_service_id").on(table.service_id),
+    idxProposalsProfessionalId: index("idx_proposals_professional_id").on(table.professional_id),
+    idxProposalsStatus: index("idx_proposals_status").on(table.status),
+  };
 });
 
 export const ratings = sqliteTable("ratings", {
@@ -207,6 +247,12 @@ export const ratings = sqliteTable("ratings", {
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxRatingsProposalId: index("idx_ratings_proposal_id").on(table.proposal_professional_id),
+    idxRatingsClientId: index("idx_ratings_client_id").on(table.client_id),
+    idxRatingsProfessionalId: index("idx_ratings_professional_id").on(table.professional_id),
+  };
 });
 
 export const favorites = sqliteTable("favorites", {
@@ -220,6 +266,11 @@ export const favorites = sqliteTable("favorites", {
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxFavoritesUserId: index("idx_favorites_user_id").on(table.user_id),
+    idxFavoritesFavoriteUserId: index("idx_favorites_favorite_user_id").on(table.favorite_user_id),
+  };
 });
 
 export const subscriptions = sqliteTable("subscriptions", {
@@ -247,6 +298,10 @@ export const subscriptions = sqliteTable("subscriptions", {
   updated_at: int("updated_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxSubscriptionsUserId: index("idx_subscriptions_user_id").on(table.user_id),
+  };
 });
 
 export const favoriteServices = sqliteTable("favorite_services", {
@@ -260,6 +315,11 @@ export const favoriteServices = sqliteTable("favorite_services", {
   created_at: int("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+}, (table) => {
+  return {
+    idxFavServicesUserId: index("idx_fav_services_user_id").on(table.user_id),
+    idxFavServicesServiceId: index("idx_fav_services_service_id").on(table.favorite_service_id),
+  };
 });
 
 export const usersRelations = relations(users, ({ one, many }) => ({
