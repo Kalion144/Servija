@@ -44,6 +44,11 @@ const storage = multer.diskStorage({
   },
 });
 
+// Função auxiliar para pegar o caminho relativo do diretório de upload
+const getRelativePath = (fullPath: string) => {
+  return path.relative(uploadDir, fullPath);
+};
+
 // Filtrar tipos de arquivos permitidos (apenas imagens)
 const fileFilter = (
   req: any,

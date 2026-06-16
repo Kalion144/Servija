@@ -22,23 +22,64 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Helmet para segurança HTTP
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: [
+          "'self'",
+          "data:",
+          "blob:",
+          env.FRONTEND_URL,
+          "http://localhost:5174",
+        ],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+      },
+    },
+  }),
+);
 
-// Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Muitas requisições, tente novamente mais tarde.",
+// Garantir UTF-8 em todas as respostas JSON
+app.use((req, res, next) => {
+  // Não interferir com o stripe webhook (precisa do body raw)
+  if (req.path.startsWith("/stripe")) {
+    return next();
+  }
+
+  // Não interferir com arquivos staticos
+  if (req.path.startsWith("/uploads")) {
+    return next();
+  }
+
+  // Se o Content-Type ainda não foi definido, definir para JSON com UTF-8
+  if (!res.getHeader("Content-Type")) {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+  }
+  next();
 });
-app.use(limiter);
 
 // CORS
 app.use(
   cors({
-    origin: [env.FRONTEND_URL, "http://localhost:5174"],
+    origin: [
+      env.FRONTEND_URL,
+      "http://localhost:5173",
+      "http://localhost:5174",
+    ],
     credentials: true,
   }),
 );
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: env.NODE_ENV === "development" ? 1000 : 100, // More lenient in dev
+  message: "Muitas requisições, tente novamente mais tarde.",
+});
+app.use(limiter);
 
 // Stripe webhook precisa do body raw (antes do express.json)
 app.use("/stripe", stripeRoutes);

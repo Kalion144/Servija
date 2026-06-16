@@ -1,8 +1,20 @@
 import { Router } from 'express';
 import upload from '../middleware/upload.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadDir = path.join(__dirname, '../../uploads');
 
 const router = Router();
+
+// Função auxiliar para pegar o caminho relativo
+const getRelativeUrl = (file: Express.Multer.File) => {
+  const relativePath = path.relative(uploadDir, file.path);
+  return `/uploads/${relativePath.replace(/\\/g, '/')}`; // Garantir barras no Windows
+};
 
 // Rota para upload de uma única imagem
 router.post('/single', authenticateToken, upload.single('image'), (req, res) => {
@@ -11,12 +23,9 @@ router.post('/single', authenticateToken, upload.single('image'), (req, res) => 
       return res.status(400).json({ error: 'Nenhuma imagem enviada' });
     }
 
-    // Gerar a URL pública da imagem
-    const imageUrl = `/uploads/${req.file.filename}`;
-
     res.status(201).json({
       message: 'Imagem enviada com sucesso!',
-      url: imageUrl,
+      url: getRelativeUrl(req.file),
       filename: req.file.filename
     });
   } catch (error) {
@@ -32,13 +41,13 @@ router.post('/multiple', authenticateToken, upload.array('images', 5), (req, res
       return res.status(400).json({ error: 'Nenhuma imagem enviada' });
     }
 
-    // Gerar URLs públicas
-    const imageUrls = (req.files as Express.Multer.File[]).map(file => `/uploads/${file.filename}`);
+    const files = req.files as Express.Multer.File[];
+    const imageUrls = files.map(file => getRelativeUrl(file));
 
     res.status(201).json({
       message: 'Imagens enviadas com sucesso!',
       urls: imageUrls,
-      filenames: (req.files as Express.Multer.File[]).map(file => file.filename)
+      filenames: files.map(file => file.filename)
     });
   } catch (error) {
     console.error('Erro no upload:', error);
