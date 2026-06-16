@@ -22,6 +22,7 @@ import CadastroProfessional from './pages/professional/CadastroProfessional';
 import OnboardingFlow from './pages/onboarding/OnboardingFlow';
 import OnboardingRoute from './components/OnboardingRoute';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
+import ProfessionalDashboard from './pages/professional/Dashboard';
 
 function App() {
   return (
@@ -156,6 +157,14 @@ function App() {
           element={
             <ProtectedRoute allowedType="PROFISSIONAL">
               <ProfessionalProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/professional/dashboard"
+          element={
+            <ProtectedRoute allowedType="PROFISSIONAL">
+              <ProfessionalDashboard />
             </ProtectedRoute>
           }
         />

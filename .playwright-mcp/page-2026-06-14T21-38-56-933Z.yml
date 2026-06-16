@@ -1,0 +1,21 @@
+- generic [active] [ref=e1]:
+  - text: Servijá Rápido. fácil. resolvido.
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: Servijá.
+      - heading "Complete seu perfil" [level=2] [ref=e8]
+      - paragraph [ref=e9]: "Etapa 2 de 4: Verificação de identidade"
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]: 
+        - text: Verificação simulada — sem envio real de SMS
+      - paragraph [ref=e34]:
+        - text: Enviaremos um código para o número
+        - strong [ref=e35]: (61) 88888-8888
+      - generic [ref=e36]:
+        - generic [ref=e37]: Código de verificação
+        - textbox "0000" [ref=e38]
+      - button "Usar código de demonstração (1234)" [ref=e39] [cursor=pointer]
+    - generic [ref=e29]:
+      - button "Voltar" [ref=e40] [cursor=pointer]
+      - button "Continuar" [ref=e30] [cursor=pointer]

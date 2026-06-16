@@ -4,10 +4,8 @@ import { users, professionalProfiles } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { env } from "../config/env.js";
-import logger from "../config/logger.js";
 
-const JWT_SECRET = env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || "seu-segredo-jwt";
 
 async function checkCompleteness(user: any) {
   const missingFields: string[] = [];
@@ -23,7 +21,7 @@ async function checkCompleteness(user: any) {
       .select()
       .from(professionalProfiles)
       .where(eq(professionalProfiles.user_id, user.id));
-
+    
     profile = profProfile || null;
     if (!profProfile) {
       missingFields.push("profissao", "experiencia", "habilidades");
@@ -44,18 +42,15 @@ async function checkCompleteness(user: any) {
       missingFields.push("tipo_cliente", "preferencias_busca");
     } else {
       if (!cliProfile.tipo_cliente) missingFields.push("tipo_cliente");
-      if (!cliProfile.preferencias_busca)
-        missingFields.push("preferencias_busca");
+      if (!cliProfile.preferencias_busca) missingFields.push("preferencias_busca");
     }
   }
 
+  // Console log indicating incomplete fields for developers
   if (missingFields.length > 0) {
-    logger.warn(
-      { userId: user.id, tipo: user.tipo, missingFields },
-      "Perfil incompleto",
-    );
+    console.log(`⚠️ [CompletenessCheck] Usuário ${user.nome} (ID: ${user.id}, Tipo: ${user.tipo}) possui perfil INCOMPLETO. Faltam: ${missingFields.join(", ")}`);
   } else {
-    logger.info({ userId: user.id }, "Perfil completo");
+    console.log(`✅ [CompletenessCheck] Usuário ${user.nome} (ID: ${user.id}) possui perfil completo.`);
   }
 
   return {
@@ -70,23 +65,21 @@ export class AuthController {
     const { nome, email, senha, tipo, foto } = req.body;
 
     try {
-      logger.info({ email }, "Verificando se usuário já existe com email");
+      console.log("🔍 [register] Verificando se usuário já existe com email:", email);
       const existingUser = await db
         .select()
         .from(users)
         .where(eq(users.email, email));
 
       if (existingUser.length > 0) {
-        logger.warn({ email }, "Email já cadastrado");
-        // Evita enumeração de usuários retornando a mesma resposta para sucesso e falha
-        // Por enquanto, mantendo o comportamento anterior, mas com log seguro
+        console.log("❌ [register] Email já cadastrado");
         return res.status(400).json({ erro: "Email já cadastrado" });
       }
 
-      logger.debug("Gerando hash da senha");
+      console.log("🔐 [register] Gerando hash da senha...");
       const senha_hash = await bcrypt.hash(senha, 10);
 
-      logger.debug("Inserindo usuário no banco");
+      console.log("💾 [register] Inserindo usuário no banco...");
       const result = await db
         .insert(users)
         .values({
@@ -104,7 +97,7 @@ export class AuthController {
         throw new Error("Falha ao criar usuário");
       }
 
-      logger.debug("Gerando token JWT");
+      console.log("🔑 [register] Gerando token JWT...");
       const token = jwt.sign(
         { userId: newUser.id, userType: tipo },
         JWT_SECRET,
@@ -116,31 +109,34 @@ export class AuthController {
         .from(users)
         .where(eq(users.id, newUser.id));
 
-      const completeness = await checkCompleteness(userData!);
+      const completeness = await checkCompleteness(userData);
 
       const response = {
         mensagem: "Usuário cadastrado com sucesso",
         usuario: {
           ...userData,
-          perfilProfissional:
-            tipo === "PROFISSIONAL" ? completeness.profile : null,
+          perfilProfissional: tipo === "PROFISSIONAL" ? completeness.profile : null,
           perfilCliente: tipo === "CLIENTE" ? completeness.profile : null,
           perfilIncompleto: completeness.perfilIncompleto,
           missingFields: completeness.missingFields,
         },
       };
 
-      logger.info({ userId: newUser.id }, "Usuário registrado com sucesso");
+      console.log("✅ [register] Resposta de registro:", JSON.stringify(response, null, 2));
       res.cookie("token", token, {
         httpOnly: true,
-        secure: env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         maxAge: 3 * 60 * 60 * 1000,
       });
       res.status(201).json(response);
     } catch (error) {
-      logger.error({ error, email }, "Erro no registro");
-      const mensagemErro = "Erro interno do servidor";
+      console.error("❌ [register] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
       res.status(500).json({ erro: mensagemErro });
     }
   }
@@ -148,32 +144,32 @@ export class AuthController {
   static async login(req: Request, res: Response) {
     const { email, senha } = req.body;
 
-    logger.info(
-      { email: email ? "enviado" : "não enviado" },
-      "Solicitação de login recebida",
-    );
+    console.log("📥 [login] Recebendo solicitação de login - Dados recebidos:", { email: email ? "enviado" : "não enviado" });
 
     try {
-      logger.debug({ email }, "Buscando usuário no banco");
+      console.log("🔍 [login] Buscando usuário no banco com email:", email);
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.email, email));
 
       if (!user) {
-        logger.warn({ email }, "Email não encontrado");
-        return res.status(401).json({ erro: "Credenciais inválidas" });
+        console.log("❌ [login] Login falhou: Email não encontrado no banco de dados");
+        return res.status(401).json({ erro: "Email não encontrado" });
       }
 
-      logger.debug({ userId: user.id }, "Verificando senha");
+      console.log("✅ [login] Usuário encontrado no banco:", { id: user.id, nome: user.nome, tipo: user.tipo });
+
+      console.log("🔐 [login] Verificando senha...");
       const senhaValida = await bcrypt.compare(senha, user.senha_hash);
 
       if (!senhaValida) {
-        logger.warn({ userId: user.id }, "Senha incorreta");
-        return res.status(401).json({ erro: "Credenciais inválidas" });
+        console.log("❌ [login] Login falhou: Senha incorreta");
+        return res.status(401).json({ erro: "Senha incorreta" });
       }
 
-      logger.debug({ userId: user.id }, "Gerando token JWT");
+      console.log("✅ [login] Senha correta!");
+      console.log("🔑 [login] Gerando token JWT...");
       const token = jwt.sign(
         { userId: user.id, userType: user.tipo },
         JWT_SECRET,
@@ -186,25 +182,28 @@ export class AuthController {
         mensagem: "Login realizado com sucesso",
         usuario: {
           ...user,
-          perfilProfissional:
-            user.tipo === "PROFISSIONAL" ? completeness.profile : null,
+          perfilProfissional: user.tipo === "PROFISSIONAL" ? completeness.profile : null,
           perfilCliente: user.tipo === "CLIENTE" ? completeness.profile : null,
           perfilIncompleto: completeness.perfilIncompleto,
           missingFields: completeness.missingFields,
         },
       };
 
-      logger.info({ userId: user.id }, "Login bem-sucedido");
+      console.log("✅ [login] Login bem-sucedido!");
       res.cookie("token", token, {
         httpOnly: true,
-        secure: env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         maxAge: 3 * 60 * 60 * 1000,
       });
       res.json(response);
     } catch (error) {
-      logger.error({ error, email }, "Erro no login");
-      const mensagemErro = "Erro interno do servidor";
+      console.error("❌ [login] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
       res.status(500).json({ erro: mensagemErro });
     }
   }
@@ -214,36 +213,40 @@ export class AuthController {
       const userId = req.user?.userId;
 
       if (!userId || !Number.isFinite(userId)) {
-        logger.warn("Usuário não autenticado ou userId inválido");
+        console.warn("⚠️ [me] Usuário não autenticado ou userId inválido");
         return res.status(401).json({ erro: "Usuário não autenticado" });
       }
 
-      logger.debug({ userId }, "Buscando usuário");
+      console.log("🔍 [me] Buscando usuário com ID:", userId);
 
       const [user] = await db.select().from(users).where(eq(users.id, userId));
 
       if (!user) {
-        logger.warn({ userId }, "Usuário não encontrado");
+        console.warn("⚠️ [me] Usuário não encontrado");
         return res.status(404).json({ erro: "Usuário não encontrado" });
       }
 
       const completeness = await checkCompleteness(user);
 
-      logger.debug({ userId }, "Usuário encontrado");
+      console.log("✅ [me] Usuário encontrado:", { id: user.id, nome: user.nome });
 
       res.json({
         usuario: {
           ...user,
-          perfilProfissional:
-            user.tipo === "PROFISSIONAL" ? completeness.profile : null,
+          perfilProfissional: user.tipo === "PROFISSIONAL" ? completeness.profile : null,
           perfilCliente: user.tipo === "CLIENTE" ? completeness.profile : null,
           perfilIncompleto: completeness.perfilIncompleto,
           missingFields: completeness.missingFields,
         },
       });
     } catch (error) {
-      logger.error({ error, userId: req.user?.userId }, "Erro em /me");
-      res.status(500).json({ erro: "Erro interno do servidor" });
+      console.error("❌ [me] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
@@ -288,10 +291,6 @@ export class AuthController {
       }
 
       const [user] = await db.select().from(users).where(eq(users.id, userId));
-
-      if (!user) {
-        throw new Error("Usuário não encontrado");
-      }
 
       if (user.tipo === "PROFISSIONAL") {
         const profData: Record<string, string | undefined> = {};
@@ -352,13 +351,8 @@ export class AuthController {
         .from(users)
         .where(eq(users.id, userId));
 
-      if (!updatedUser) {
-        throw new Error("Usuário não encontrado");
-      }
-
       const completeness = await checkCompleteness(updatedUser);
 
-      logger.info({ userId }, "Onboarding atualizado com sucesso");
       res.status(200).json({
         mensagem: "Onboarding atualizado com sucesso",
         usuario: {
@@ -372,7 +366,7 @@ export class AuthController {
         },
       });
     } catch (error) {
-      logger.error({ error, userId }, "Erro ao atualizar onboarding");
+      console.error("❌ [updateOnboarding] Erro:", error);
       res.status(500).json({ erro: "Erro ao atualizar onboarding" });
     }
   }
@@ -401,13 +395,8 @@ export class AuthController {
         .from(users)
         .where(eq(users.id, userId));
 
-      if (!updatedUser) {
-        throw new Error("Usuário não encontrado");
-      }
-
       const completeness = await checkCompleteness(updatedUser);
 
-      logger.info({ userId, fotoUrl }, "Foto enviada com sucesso");
       res.status(201).json({
         mensagem: "Foto enviada com sucesso",
         url: fotoUrl,
@@ -422,7 +411,7 @@ export class AuthController {
         },
       });
     } catch (error) {
-      logger.error({ error, userId: req.user?.userId }, "Erro ao enviar foto");
+      console.error("❌ [uploadProfilePhoto] Erro:", error);
       res.status(500).json({ erro: "Erro ao enviar foto" });
     }
   }
@@ -444,7 +433,7 @@ export class AuthController {
 
     try {
       if (!userId || !Number.isFinite(userId)) {
-        logger.warn("Usuário não autenticado ou userId inválido");
+        console.warn("⚠️ [updateUser] Usuário não autenticado ou userId inválido");
         return res.status(401).json({ erro: "Usuário não autenticado" });
       }
 
@@ -460,7 +449,7 @@ export class AuthController {
       if (dataNascimento) updateData.dataNascimento = dataNascimento;
       if (bio) updateData.bio = bio;
 
-      logger.debug({ userId, updateData }, "Atualizando usuário");
+      console.log("🔍 [updateUser] Atualizando usuário com ID:", userId, "dados:", updateData);
 
       await db.update(users).set(updateData).where(eq(users.id, userId));
 
@@ -473,22 +462,27 @@ export class AuthController {
         throw new Error("Usuário não encontrado");
       }
 
-      logger.info({ userId }, "Usuário atualizado com sucesso");
+      console.log("✅ [updateUser] Usuário atualizado com sucesso");
       res.json({
         mensagem: "Usuário atualizado com sucesso",
         usuario: updatedUser,
       });
     } catch (error) {
-      logger.error({ error, userId }, "Erro ao atualizar usuário");
-      res.status(500).json({ erro: "Erro interno do servidor" });
+      console.error("❌ [updateUser] Erro completo:", {
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+        stack: error instanceof Error ? error.stack : undefined,
+        error,
+      });
+      const mensagemErro = error instanceof Error ? error.message : "Erro interno do servidor";
+      res.status(500).json({ erro: mensagemErro });
     }
   }
 
   static async logout(req: Request, res: Response) {
-    logger.info({ userId: req.user?.userId }, "Realizando logout");
+    console.log("📤 [logout] Realizando logout...");
     res.clearCookie("token", {
       httpOnly: true,
-      secure: env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     });
     res.json({ mensagem: "Logout realizado com sucesso" });

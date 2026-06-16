@@ -387,4 +387,98 @@ export class ProposalController {
       res.status(500).json({ erro: mensagemErro });
     }
   }
+
+  static async listarMarketplace(req: Request, res: Response) {
+    const user = req.user!;
+
+    if (user.userType !== "PROFISSIONAL") {
+      return res.status(403).json({ erro: "Acesso restrito a profissionais" });
+    }
+
+    try {
+      const servicos = await db
+        .select({
+          id: professionalServices.id,
+          titulo: professionalServices.titulo,
+          descricao: professionalServices.descricao,
+          valor: professionalServices.preco,
+          status: professionalServices.status,
+          created_at: professionalServices.created_at,
+          clienteNome: users.nome,
+          clienteId: professionalServices.client_id,
+        })
+        .from(professionalServices)
+        .innerJoin(users, eq(users.id, professionalServices.client_id))
+        .where(eq(professionalServices.status, "PENDENTE"))
+        .orderBy(desc(professionalServices.created_at));
+
+      const interesses = await db
+        .select({ service_id: proposalProfessionals.service_id })
+        .from(proposalProfessionals)
+        .where(eq(proposalProfessionals.professional_id, user.userId));
+
+      const interesseIds = new Set(interesses.map((i) => i.service_id));
+
+      const resultado = servicos.map((s) => ({
+        ...s,
+        jaInteressou: interesseIds.has(s.id),
+      }));
+
+      res.json(resultado);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ erro: "Erro interno do servidor" });
+    }
+  }
+
+  static async demonstrarInteresse(req: Request, res: Response) {
+    const user = req.user!;
+    const { id } = req.params;
+
+    if (user.userType !== "PROFISSIONAL") {
+      return res
+        .status(403)
+        .json({ erro: "Apenas profissionais podem demonstrar interesse" });
+    }
+
+    try {
+      const [servico] = await db
+        .select()
+        .from(professionalServices)
+        .where(and(eq(professionalServices.id, Number(id)), eq(professionalServices.status, "PENDENTE")));
+
+      if (!servico) {
+        return res
+          .status(404)
+          .json({ erro: "Serviço não encontrado ou não está pendente" });
+      }
+
+      const [existing] = await db
+        .select()
+        .from(proposalProfessionals)
+        .where(
+          and(
+            eq(proposalProfessionals.service_id, Number(id)),
+            eq(proposalProfessionals.professional_id, user.userId)
+          )
+        );
+
+      if (existing) {
+        return res
+          .status(400)
+          .json({ erro: "Você já demonstrou interesse neste serviço" });
+      }
+
+      await db.insert(proposalProfessionals).values({
+        service_id: Number(id),
+        professional_id: user.userId,
+        status: "PENDENTE",
+      });
+
+      res.json({ mensagem: "Interesse registrado com sucesso" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ erro: "Erro interno do servidor" });
+    }
+  }
 }

@@ -1,8 +1,8 @@
 
 import type { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import { env } from '../config/env.js'
-import logger from '../config/logger.js'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'seu-segredo-jwt'
 
 interface JwtPayload {
   userId: number
@@ -28,9 +28,8 @@ export function authenticateToken(
     return res.status(401).json({ erro: 'Token não fornecido' })
   }
 
-  jwt.verify(token, env.JWT_SECRET, (err: any, decoded: any) => {
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
-      logger.warn({ err }, 'Token inválido');
       return res.status(403).json({ erro: 'Token inválido' })
     }
 
@@ -38,12 +37,12 @@ export function authenticateToken(
     
     // Validate userId is a finite number
     if (!payload || typeof payload.userId !== 'number' || !Number.isFinite(payload.userId)) {
-      logger.warn({ userId: payload?.userId }, 'Invalid userId in token');
+      console.warn('⚠️ [authenticateToken] Invalid userId in token:', payload?.userId);
       return res.status(403).json({ erro: 'Token inválido' });
     }
 
     req.user = payload;
-    next();
-  });
+    next()
+  })
 }
 

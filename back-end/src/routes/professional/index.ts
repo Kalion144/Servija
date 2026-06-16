@@ -7,8 +7,11 @@ import { ProfessionalRatingController } from "../../controllers/professional/rat
 import { ConversationController } from "../../controllers/ConversationController.js";
 import { authenticateToken } from "../../middleware/authMiddleware.js";
 import { SubscriptionController } from "../../controllers/SubscriptionController.js";
+import { MetricsController } from "../../controllers/professional/metricsController.js";
 
 const router = Router();
+
+router.get("/metrics", authenticateToken, MetricsController.obter);
 
 router.get(
   "/subscription/status",
@@ -27,42 +30,28 @@ router.get(
 );
 
 router.get("/", ProfessionalController.listar);
-// Routes with static segments first!
-router.post("/profile", authenticateToken, ProfessionalController.criarPerfil);
-router.put(
-  "/profile",
-  authenticateToken,
-  ProfessionalController.atualizarPerfil,
-);
-router.post("/services", authenticateToken, ServiceController.adicionarServico);
-router.delete(
-  "/services/:id",
-  authenticateToken,
-  ServiceController.removerServico,
-);
-router.get(
-  "/services",
-  authenticateToken,
-  ServiceController.listarServicosProfissional,
-);
 
+router.post("/profile", authenticateToken, ProfessionalController.criarPerfil);
+router.put("/profile", authenticateToken, ProfessionalController.atualizarPerfil);
+
+router.post("/services", authenticateToken, ServiceController.adicionarServico);
+router.delete("/services/:id", authenticateToken, ServiceController.removerServico);
+router.get("/services", authenticateToken, ServiceController.listarServicosProfissional);
+
+// Marketplace: todas as propostas abertas dos clientes
+router.get("/proposals/marketplace", authenticateToken, ProposalController.listarMarketplace);
+// Propostas enviadas especificamente a este profissional
+router.get("/proposals", authenticateToken, ProposalController.listarMinhas);
 router.post("/proposals", authenticateToken, ProposalController.enviar);
-router.post(
-  "/proposals/:id/accept",
-  authenticateToken,
-  ProposalController.aceitar,
-);
-router.post(
-  "/proposals/:id/reject",
-  authenticateToken,
-  ProposalController.recusar,
-);
+router.post("/proposals/:id/accept", authenticateToken, ProposalController.aceitar);
+router.post("/proposals/:id/reject", authenticateToken, ProposalController.recusar);
+// Profissional demonstra interesse em uma proposta do marketplace
+router.post("/proposals/:id/interest", authenticateToken, ProposalController.demonstrarInteresse);
 router.post(
   "/proposals/:proposalProfessionalId/complete",
   authenticateToken,
   ProposalController.marcarConcluido,
 );
-router.get("/proposals", authenticateToken, ProposalController.listarMinhas);
 
 router.post("/conversations", authenticateToken, ConversationController.iniciar);
 router.get("/conversations", authenticateToken, ConversationController.listar);
@@ -82,7 +71,7 @@ router.patch(
   authenticateToken,
   ConversationController.concluir,
 );
-// Rotas de favoritos (Usuários) para profissionais
+
 router.post(
   "/favorites/users",
   authenticateToken,
@@ -95,7 +84,6 @@ router.get(
   FavoritesController.checkFavoriteUser,
 );
 
-// Rotas de favoritos (Serviços) para profissionais
 router.post(
   "/favorites/services",
   authenticateToken,
@@ -108,7 +96,6 @@ router.get(
   FavoritesController.checkFavoriteService,
 );
 
-// Avaliações
 router.post("/ratings", authenticateToken, ProfessionalRatingController.criar);
 
 // Dynamic route last!

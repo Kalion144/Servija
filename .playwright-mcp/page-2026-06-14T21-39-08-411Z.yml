@@ -1,0 +1,27 @@
+- generic [ref=e1]:
+  - text: Servijá Rápido. fácil. resolvido.
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: Servijá.
+      - heading "Complete seu perfil" [level=2] [ref=e8]
+      - paragraph [ref=e9]: "Etapa 3 de 4: Documentos"
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]: 
+        - text: Confirmação de documentos — apenas visual (sem upload real)
+      - generic [ref=e44]:
+        - generic [ref=e45]: 
+        - generic [ref=e46]:
+          - strong [ref=e47]: Documento de identidade
+          - paragraph [ref=e48]: RG ou CNH — validação em breve
+        - generic [ref=e49]: Pendente
+      - generic [ref=e50]:
+        - generic [ref=e51]: 
+        - generic [ref=e52]:
+          - strong [ref=e53]: Comprovante de endereço
+          - paragraph [ref=e54]: Conta de luz, água ou similar
+        - generic [ref=e55]: Pendente
+      - paragraph [ref=e56]: Esta etapa é apenas ilustrativa. Clique em continuar para prosseguir.
+    - generic [ref=e29]:
+      - button "Voltar" [ref=e40] [cursor=pointer]
+      - button "Continuar" [active] [ref=e30] [cursor=pointer]

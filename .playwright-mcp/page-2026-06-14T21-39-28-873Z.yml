@@ -1,0 +1,34 @@
+- generic [ref=e1]:
+  - text: Servijá Rápido. fácil. resolvido.
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: Servijá.
+      - heading "Complete seu perfil" [level=2] [ref=e8]
+      - paragraph [ref=e9]: "Etapa 4 de 4: Perfil"
+    - generic [ref=e57]:
+      - generic [ref=e58]:
+        - generic [ref=e59]: O que você é?
+        - generic [ref=e60]:
+          - button "Pessoa física" [ref=e61] [cursor=pointer]
+          - button "Construtora" [ref=e62] [cursor=pointer]
+          - button "Imobiliária" [ref=e63] [cursor=pointer]
+          - button "Condomínio" [ref=e64] [cursor=pointer]
+          - button "Outro" [ref=e65] [cursor=pointer]
+      - generic [ref=e66]:
+        - generic [ref=e67]: O que você procura?
+        - generic [ref=e68]:
+          - button "Reformas residenciais" [ref=e69] [cursor=pointer]
+          - button "Reformas comerciais" [ref=e70] [cursor=pointer]
+          - button "Construção nova" [ref=e71] [cursor=pointer]
+          - button "Manutenção predial" [ref=e72] [cursor=pointer]
+          - button "Serviços elétricos" [active] [ref=e73] [cursor=pointer]
+          - button "Serviços hidráulicos" [ref=e74] [cursor=pointer]
+          - button "Pintura e acabamento" [ref=e75] [cursor=pointer]
+          - button "Marcenaria e móveis" [ref=e76] [cursor=pointer]
+          - button "Jardinagem e paisagismo" [ref=e77] [cursor=pointer]
+          - button "Limpeza e conservação" [ref=e78] [cursor=pointer]
+          - button "Instalações e montagens" [ref=e79] [cursor=pointer]
+          - button "Emergências e reparos urgentes" [ref=e80] [cursor=pointer]
+    - generic [ref=e29]:
+      - button "Voltar" [ref=e40] [cursor=pointer]
+      - button "Finalizar e entrar" [ref=e81] [cursor=pointer]

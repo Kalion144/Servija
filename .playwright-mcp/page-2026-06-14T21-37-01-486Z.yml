@@ -1,0 +1,154 @@
+- generic [active] [ref=e1]:
+  - text: Servijá Rápido. fácil. resolvido.
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - heading "Olá, Profissional!👋" [level=2] [ref=e7]
+        - generic [ref=e8]:
+          - generic [ref=e9]: 
+          - text: Brasília - DF
+      - generic [ref=e10]:
+        - button "" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]: 
+        - button "" [ref=e13] [cursor=pointer]:
+          - generic [ref=e14]: 
+        - button "" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: 
+        - button "" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: 
+        - generic "Você iniciou 0 de 3 contatos hoje" [ref=e19]:
+          - generic [ref=e20]: 
+          - generic [ref=e21]:
+            - strong [ref=e22]: "0"
+            - text: /3 hoje
+        - button "" [ref=e24] [cursor=pointer]:
+          - generic [ref=e25]: 
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]: 
+            - text: Propostas Disponíveis
+          - generic [ref=e31]: 1 serviço disponível
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic: 
+            - textbox "Filtrar serviços e clientes por cidade..." [ref=e34]
+          - button "Buscar" [ref=e35] [cursor=pointer]
+          - button " Minha cidade (Brasília)" [ref=e36] [cursor=pointer]:
+            - generic [ref=e37]: 
+            - text: Minha cidade (Brasília)
+        - generic [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]: C
+              - generic [ref=e43]:
+                - generic [ref=e44]: cliente
+                - generic [ref=e45]:
+                  - generic [ref=e46]: 
+                  - text: Arniqueiras - DF
+            - button "" [ref=e48]:
+              - generic [ref=e49]: 
+          - generic [ref=e50]: instalacao eletrica casa
+          - generic [ref=e51]: quero uma intalacao de quadro de luz para painel solar
+          - generic [ref=e52]:
+            - generic [ref=e54]:
+              - generic [ref=e55]: 
+              - text: Arniqueiras - DF
+            - button "Ver detalhes " [ref=e56]:
+              - text: Ver detalhes
+              - generic [ref=e57]: 
+      - generic [ref=e58]:
+        - generic [ref=e60]:
+          - generic [ref=e61]: 
+          - text: Novidades para Você
+        - generic [ref=e62]:
+          - generic [ref=e63] [cursor=pointer]:
+            - generic [ref=e66]:
+              - generic [ref=e68]: 
+              - generic [ref=e69]: Tempo real
+            - generic [ref=e70]: 📊 Relatórios Avançados
+            - generic [ref=e71]: Acompanhe ganhos, clientes atendidos, avaliações e muito mais.
+            - generic [ref=e72]:
+              - generic [ref=e73]:
+                - generic [ref=e74]: 0/3
+                - generic [ref=e75]: contatos hoje
+              - generic [ref=e76]:
+                - generic [ref=e77]: FREE
+                - generic [ref=e78]: plano ativo
+            - button " Ver relatório completo" [ref=e79]:
+              - generic [ref=e80]: 
+              - text: Ver relatório completo
+          - generic [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]:
+              - generic [ref=e83]: 💎 Premium Profissional
+              - generic [ref=e84]:
+                - generic [ref=e85]: Free
+                - generic [ref=e86]: 
+            - generic [ref=e93]:
+              - generic [ref=e94]:
+                - generic [ref=e95]:
+                  - generic [ref=e96]:
+                    - generic [ref=e97]: 👤
+                    - text: Free
+                  - generic [ref=e99]: Grátis
+                - list [ref=e100]:
+                  - listitem [ref=e101]:
+                    - generic [ref=e102]: 
+                    - text: 3 clientes por dia
+                  - listitem [ref=e103]:
+                    - generic [ref=e104]: 
+                    - text: Perfil público
+                - button " Plano atual" [disabled] [ref=e105]:
+                  - generic [ref=e106]: 
+                  - text: Plano atual
+              - generic [ref=e107]:
+                - generic [ref=e108]:
+                  - generic [ref=e109]:
+                    - generic [ref=e110]: 💼
+                    - text: Pro
+                  - generic [ref=e111]:
+                    - generic [ref=e112]: R$ 59,99
+                    - generic [ref=e113]: /mês
+                - list [ref=e114]:
+                  - listitem [ref=e115]:
+                    - generic [ref=e116]: 
+                    - text: 10 clientes/dia
+                  - listitem [ref=e117]:
+                    - generic [ref=e118]: 
+                    - text: Chat em tempo real
+                  - listitem [ref=e119]:
+                    - generic [ref=e120]: 
+                    - text: Impulso de ranking
+                  - listitem [ref=e121]:
+                    - generic [ref=e122]: 
+                    - text: Verificado
+                - button "Assinar Pro" [ref=e123]
+              - generic [ref=e124]:
+                - generic [ref=e125]:
+                  - generic [ref=e126]: 
+                  - text: Popular
+                - generic [ref=e127]:
+                  - generic [ref=e128]:
+                    - generic [ref=e129]: 💎
+                    - text: Premium
+                  - generic [ref=e130]:
+                    - generic [ref=e131]: R$ 129,99
+                    - generic [ref=e132]: /mês
+                - list [ref=e133]:
+                  - listitem [ref=e134]:
+                    - generic [ref=e135]: 
+                    - text: Clientes ilimitados
+                  - listitem [ref=e136]:
+                    - generic [ref=e137]: 
+                    - text: Tudo do Pro
+                  - listitem [ref=e138]:
+                    - generic [ref=e139]: 
+                    - text: Clientes premium
+                - button "Assinar Premium" [ref=e140]
+          - generic [ref=e88] [cursor=pointer]:
+            - heading " 💬 Chat em Tempo Real" [level=4] [ref=e89]:
+              - generic [ref=e90]: 
+              - text: 💬 Chat em Tempo Real
+            - paragraph [ref=e91]: Comunique-se diretamente com os clientes!
+            - generic [ref=e92]: Disponível para planos Pro e Premium

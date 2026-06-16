@@ -8,7 +8,7 @@ import {
   users,
 } from "../db/schema.js";
 import { eq, and, desc, or } from "drizzle-orm";
-import { getProfessionalLimits } from "../services/subscriptionService.js";
+import { getProfessionalLimits, getUserPlan } from "../services/subscriptionService.js";
 
 export class ConversationController {
   static async iniciar(req: Request, res: Response) {
@@ -39,7 +39,20 @@ export class ConversationController {
         return res.status(400).json({ erro: "Este serviço não está aberto" });
       }
 
-      const profLimits = await getProfessionalLimits(user.userId);
+      const [profLimits, clientPlan] = await Promise.all([
+        getProfessionalLimits(user.userId),
+        getUserPlan(servico.client_id, "CLIENTE"),
+      ]);
+
+      // Gate: serviços de clientes PREMIUM só podem ser contactados por profissionais PREMIUM
+      if (clientPlan === "PREMIUM" && profLimits.plan !== "PREMIUM") {
+        return res.status(403).json({
+          erro: "Este serviço é exclusivo para profissionais com plano Premium. Faça upgrade para contactar clientes premium.",
+          clientPlan,
+          professionalPlan: profLimits.plan,
+          requiresUpgrade: true,
+        });
+      }
 
       const [existing] = await db
         .select()

@@ -3,6 +3,7 @@ import {
   subscriptions,
   professionalServices,
   conversations,
+  users,
 } from "../db/schema.js";
 import { eq, and, count, gte } from "drizzle-orm";
 import {
@@ -128,6 +129,7 @@ export async function upsertSubscription(data: {
       .set(values)
       .where(eq(subscriptions.id, existing.id))
       .returning();
+    await syncVerifiedBadge(data.userId, data.userType, data.plan, data.status);
     return updated;
   }
 
@@ -139,5 +141,17 @@ export async function upsertSubscription(data: {
       ...values,
     })
     .returning();
+  await syncVerifiedBadge(data.userId, data.userType, data.plan, data.status);
   return created;
+}
+
+async function syncVerifiedBadge(
+  userId: number,
+  userType: UserType,
+  plan: PlanId,
+  status?: string,
+) {
+  if (userType !== "PROFISSIONAL") return;
+  const isVerified = (plan === "PRO" || plan === "PREMIUM") && status !== "canceled";
+  await db.update(users).set({ verified: isVerified ? 1 : 0 }).where(eq(users.id, userId));
 }
