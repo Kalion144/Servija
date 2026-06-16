@@ -148,7 +148,7 @@ const Home = () => {
       return;
     }
     try {
-      const { url } = await criarCheckoutAssinatura(plan, true);
+      const { url } = await criarCheckoutAssinatura(plan as 'PRO' | 'PREMIUM', true);
       if (url) window.location.href = url;
       else showToastMessage('Erro ao abrir checkout');
     } catch (error) {

@@ -1,1 +1,187 @@
 [     186ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:21548
+[  357473ms] [ERROR] ReferenceError: obterStatusAssinatura is not defined
+    at carregarDados (http://localhost:5173/src/pages/client/Home.tsx?t=1781474012029:87:24) @ http://localhost:5173/src/pages/client/Home.tsx?t=1781474012029:89
+[  361115ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474017749:710:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14580:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15922:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3672:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3697:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3731:39)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19763:15)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+[  361118ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474017749:710:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14580:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15922:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3672:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3697:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3731:39)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19763:15)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+[  361120ms] [ERROR] The above error occurred in the <Home> component:
+
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474017749:31:20)
+    at ProtectedRoute (http://localhost:5173/src/components/ProtectedRoute.tsx?t=1781472116708:20:42)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4129:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4599:5)
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1781472116708:34:32)
+    at App
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4542:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:5288:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14029
+[  361125ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474017749:710:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14580:28)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15922:22)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19751:22)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19114:15)
+    at recoverFromConcurrentError (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:18734:28)
+    at performSyncWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:18877:28)
+[  367492ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474022792:709:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3672:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3697:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3731:39)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19763:15)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+[  367493ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474022792:709:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3672:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3697:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3731:39)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19763:15)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+[  367493ms] [ERROR] The above error occurred in the <Home> component:
+
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474022792:31:20)
+    at ProtectedRoute (http://localhost:5173/src/components/ProtectedRoute.tsx?t=1781472116708:20:42)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4129:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4599:5)
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1781472116708:34:32)
+    at App
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4542:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:5288:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14029
+[  367494ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474022792:709:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19751:22)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19114:15)
+    at recoverFromConcurrentError (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:18734:28)
+    at performConcurrentWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:18682:30)
+[  371893ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474028070:700:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3672:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3697:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3731:39)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19763:15)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+[  371894ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474028070:700:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3672:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3697:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3731:39)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19763:15)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+[  371895ms] [ERROR] The above error occurred in the <Home> component:
+
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474028070:31:20)
+    at ProtectedRoute (http://localhost:5173/src/components/ProtectedRoute.tsx?t=1781472116708:20:42)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4129:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4599:5)
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1781472116708:34:32)
+    at App
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4542:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:5288:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14029
+[  371895ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474028070:700:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19751:22)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19114:15)
+    at recoverFromConcurrentError (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:18734:28)
+    at performConcurrentWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:18682:30)
+[  380705ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474035715:682:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3672:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3697:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3731:39)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19763:15)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+[  380706ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474035715:682:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3672:22)
+    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3697:24)
+    at invokeGuardedCallback (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:3731:39)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19763:15)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+[  380707ms] [ERROR] The above error occurred in the <Home> component:
+
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474035715:31:20)
+    at ProtectedRoute (http://localhost:5173/src/components/ProtectedRoute.tsx?t=1781472116708:20:42)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4129:5)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4599:5)
+    at AuthProvider (http://localhost:5173/src/contexts/AuthContext.tsx?t=1781472116708:34:32)
+    at App
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:4542:15)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=634423aa:5288:5)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries. @ http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14029
+[  380707ms] ReferenceError: ClientPremiumPlansCard is not defined
+    at Home (http://localhost:5173/src/pages/client/Home.tsx?t=1781474035715:682:15)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:11546:26)
+    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:14924:21)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:15912:22)
+    at beginWork$1 (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19751:22)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19196:20)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19135:13)
+    at renderRootSync (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:19114:15)
+    at recoverFromConcurrentError (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:18734:28)
+    at performConcurrentWorkOnRoot (http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:18682:30)

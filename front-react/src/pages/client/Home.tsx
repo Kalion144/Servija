@@ -9,10 +9,10 @@ import {
   criarCheckoutAssinatura,
   type PlanId,
 } from '../../services/api';
+import ClientPremiumPlansCard from '../../components/client/ClientPremiumPlansCard';
 import { getUserLocation, getUserCity } from '../../lib/userLocation';
 import CitySearchBar from '../../components/CitySearchBar';
 import FavoritesModal from '../../components/FavoritesModal';
-import ClientPremiumPlansCard from '../../components/client/ClientPremiumPlansCard';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -70,17 +70,11 @@ const Home = () => {
   };
 
   useEffect(() => {
-    const carregarDados = async () => {
-      await carregarProfissionais();
-      await carregarFavoritosIds();
-      try {
-        const status = await obterStatusAssinatura(false);
-        if (status.plan) setCurrentPlan(status.plan);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    carregarDados();
+    carregarProfissionais();
+    carregarFavoritosIds();
+    obterStatusAssinatura(false)
+      .then((s) => { if (s.plan) setCurrentPlan(s.plan); })
+      .catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -151,15 +145,11 @@ const Home = () => {
       return;
     }
     try {
-      const { url } = await criarCheckoutAssinatura(plan, false);
+      const { url } = await criarCheckoutAssinatura(plan as 'PRO' | 'PREMIUM', false);
       if (url) window.location.href = url;
       else showToast('Erro ao abrir checkout', true);
     } catch (error) {
-      console.error(error);
-      showToast(
-        error instanceof Error ? error.message : 'Erro ao iniciar assinatura',
-        true,
-      );
+      showToast(error instanceof Error ? error.message : 'Erro ao iniciar assinatura', true);
     }
   };
 
@@ -167,33 +157,6 @@ const Home = () => {
     showToast('📞 Contato enviado com sucesso!');
     closeModal();
   };
-
-  const announcements = [
-    {
-      id: 1,
-      title: '🔧 Ofertas de Ferramentas',
-      description: 'Descontos de até 30% em materiais de construção!',
-      subText: 'Aproveite a semana do cliente',
-      gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-      icon: 'fa-hard-hat',
-    },
-    {
-      id: 2,
-      title: '🧹 Limpeza Especial',
-      description: '10% de desconto na primeira diarista!',
-      subText: 'Novos clientes apenas',
-      gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-      icon: 'fa-broom',
-    },
-    {
-      id: 3,
-      title: '🛡️ Seguro Garantido',
-      description: 'Todos os serviços com seguro gratuito!',
-      subText: 'Segurança em primeiro lugar',
-      gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      icon: 'fa-shield-halved',
-    },
-  ];
 
   const styles = `
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -425,21 +388,6 @@ const Home = () => {
                 currentPlan={currentPlan}
                 onSubscribe={handleAssinarPlano}
               />
-              {announcements.map((announcement) => (
-                <div
-                  key={announcement.id}
-                  className="announcement-card"
-                  style={{ background: announcement.gradient }}
-                  onClick={() => handleAnnouncementClick(announcement.title)}
-                >
-                  <h4>
-                    <i className={`fas ${announcement.icon}`}></i>{' '}
-                    {announcement.title}
-                  </h4>
-                  <p>{announcement.description}</p>
-                  <div className="announcement-subtext">{announcement.subText}</div>
-                </div>
-              ))}
             </div>
           </div>
         </div>

@@ -9,21 +9,9 @@ import { SubscriptionController } from "../../controllers/SubscriptionController
 
 const router = Router();
 
-router.get(
-  "/subscription/status",
-  authenticateToken,
-  SubscriptionController.status,
-);
-router.post(
-  "/subscription/checkout",
-  authenticateToken,
-  SubscriptionController.createCheckout,
-);
-router.get(
-  "/subscription/confirm",
-  authenticateToken,
-  SubscriptionController.confirmSession,
-);
+router.get("/subscription/status", authenticateToken, SubscriptionController.status);
+router.post("/subscription/checkout", authenticateToken, SubscriptionController.createCheckout);
+router.get("/subscription/confirm", authenticateToken, SubscriptionController.confirmSession);
 
 // Rotas de serviços (criados por clientes)
 router.post("/services", authenticateToken, ServiceController.criar);

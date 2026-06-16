@@ -1,0 +1,12 @@
+[     165ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:21548
+[  349267ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:559
+[  349285ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ http://localhost:5173/:0
+[  350440ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-XPR23Y44.js?v=447ec123:21548
+[  959268ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/client/subscription/status:0
+[  959269ms] [ERROR] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ :0
+[  966585ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/client/subscription/status:0
+[  966585ms] [ERROR] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ :0
+[  974182ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/client/subscription/status:0
+[  974183ms] [ERROR] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ :0
+[  995783ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/client/subscription/status:0
+[  995785ms] [ERROR] SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ :0

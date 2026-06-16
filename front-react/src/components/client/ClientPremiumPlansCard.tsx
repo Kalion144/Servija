@@ -13,7 +13,11 @@ const planos = [
     emoji: '👤',
     preco: 0,
     precoLabel: 'Grátis',
-    beneficios: ['3 serviços abertos', 'Busca de profissionais'],
+    beneficios: [
+      'Acesso à plataforma de profissionais',
+      'Publicação de solicitações de serviço',
+      'Comunicação direta via chat',
+    ],
   },
   {
     id: 'PRO' as PlanId,
@@ -21,7 +25,11 @@ const planos = [
     emoji: '💼',
     preco: 59.99,
     precoLabel: 'R$ 59,99',
-    beneficios: ['10 serviços abertos', 'Prioridade na busca', 'Suporte prioritário'],
+    beneficios: [
+      '5% de desconto em serviços de limpeza e conservação',
+      '10% em materiais de construção em lojas parceiras',
+      'Seguro de conclusão de obra incluso',
+    ],
   },
   {
     id: 'PREMIUM' as PlanId,
@@ -30,7 +38,12 @@ const planos = [
     preco: 129.99,
     precoLabel: 'R$ 129,99',
     popular: true,
-    beneficios: ['Serviços ilimitados', 'Tudo do Pro', 'Destaque premium'],
+    beneficios: [
+      '15% de desconto em serviços de limpeza e conservação',
+      '30% em materiais de construção em lojas parceiras',
+      'Cobertura total de seguro para obras',
+      'Consultoria gratuita com mestre de obras certificado',
+    ],
   },
 ];
 
@@ -217,7 +230,7 @@ const ClientPremiumPlansCard: React.FC<ClientPremiumPlansCardProps> = ({
 
         {!expanded && (
           <div className="cppc-tagline">
-            Publique mais serviços e encontre os melhores profissionais!
+            Benefícios exclusivos em limpeza, construção e proteção para sua obra.
           </div>
         )}
 

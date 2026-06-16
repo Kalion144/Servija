@@ -50,10 +50,10 @@ const Profile = () => {
     const p = usuario.perfilProfissional;
     if (p) {
       setProfissao(p.profissao || '');
-      setBio(p.bio || '');
+      setBio(usuario.bio || '');
       setExperiencia(p.experiencia || '');
       setTelefone(p.telefone || '');
-      setValorHora(p.valor_hora || '');
+      setValorHora(p.valor_hora != null ? String(p.valor_hora) : '');
       setLocalizacao(p.localizacao || p.cidade || '');
       if (p.habilidades) {
         try {
